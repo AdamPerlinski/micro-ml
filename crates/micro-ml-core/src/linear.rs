@@ -177,3 +177,58 @@ pub fn linear_regression_simple(y: &[f64]) -> Result<LinearModel, JsError> {
         n,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_perfect_linear_fit() {
+        // y = 2x + 1
+        let x = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let y = vec![3.0, 5.0, 7.0, 9.0, 11.0];
+
+        let model = linear_regression_impl(&x, &y).unwrap();
+
+        assert!((model.slope - 2.0).abs() < 1e-10);
+        assert!((model.intercept - 1.0).abs() < 1e-10);
+        assert!((model.r_squared - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_prediction() {
+        let x = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let y = vec![3.0, 5.0, 7.0, 9.0, 11.0];
+
+        let model = linear_regression_impl(&x, &y).unwrap();
+
+        assert!((model.predict_one(6.0) - 13.0).abs() < 1e-10);
+        assert!((model.predict_one(0.0) - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_simple_regression() {
+        let y = vec![2.0, 4.0, 6.0, 8.0, 10.0];
+        let x: Vec<f64> = (0..y.len()).map(|i| i as f64).collect();
+        let model = linear_regression_impl(&x, &y).unwrap();
+
+        assert!((model.slope - 2.0).abs() < 1e-10);
+        assert!((model.intercept - 2.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_length_mismatch() {
+        let x = vec![1.0, 2.0];
+        let y = vec![1.0, 2.0, 3.0];
+
+        assert!(linear_regression_impl(&x, &y).is_err());
+    }
+
+    #[test]
+    fn test_insufficient_data() {
+        let x = vec![1.0];
+        let y = vec![1.0];
+
+        assert!(linear_regression_impl(&x, &y).is_err());
+    }
+}
