@@ -123,3 +123,57 @@ pub fn linear_regression_impl(x: &[f64], y: &[f64]) -> Result<LinearModel, MlErr
 pub fn linear_regression(x: &[f64], y: &[f64]) -> Result<LinearModel, JsError> {
     linear_regression_impl(x, y).map_err(|e| JsError::new(&e.message))
 }
+
+/// Simple linear regression with auto-generated x values (0, 1, 2, ...)
+/// Optimized: uses closed-form formulas for sequential x values (no allocation)
+#[wasm_bindgen(js_name = "linearRegressionSimple")]
+pub fn linear_regression_simple(y: &[f64]) -> Result<LinearModel, JsError> {
+    let n = y.len();
+    if n < 2 {
+        return Err(JsError::new("Need at least 2 data points for linear regression"));
+    }
+
+    let n_f = n as f64;
+
+    // For x = 0, 1, 2, ..., n-1:
+    // Σx = n(n-1)/2
+    // Σx² = n(n-1)(2n-1)/6
+    let sum_x = n_f * (n_f - 1.0) / 2.0;
+    let sum_xx = n_f * (n_f - 1.0) * (2.0 * n_f - 1.0) / 6.0;
+
+    // Single pass for y values
+    let mut sum_y = 0.0;
+    let mut sum_yy = 0.0;
+    let mut sum_xy = 0.0;
+
+    for i in 0..n {
+        let xi = i as f64;
+        let yi = y[i];
+        sum_y += yi;
+        sum_yy += yi * yi;
+        sum_xy += xi * yi;
+    }
+
+    let denominator = n_f * sum_xx - sum_x * sum_x;
+    if denominator == 0.0 {
+        return Err(JsError::new("Cannot fit regression: insufficient data variance"));
+    }
+
+    let slope = (n_f * sum_xy - sum_x * sum_y) / denominator;
+    let intercept = (sum_y - slope * sum_x) / n_f;
+
+    let ss_tot_factor = n_f * sum_yy - sum_y * sum_y;
+    let r_squared = if ss_tot_factor == 0.0 {
+        1.0
+    } else {
+        let numerator = n_f * sum_xy - sum_x * sum_y;
+        (numerator * numerator) / (denominator * ss_tot_factor)
+    };
+
+    Ok(LinearModel {
+        slope,
+        intercept,
+        r_squared,
+        n,
+    })
+}
