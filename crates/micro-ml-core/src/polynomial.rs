@@ -78,3 +78,50 @@ impl PolynomialModel {
         }
     }
 }
+
+/// Solve a system of linear equations using Gaussian elimination with partial pivoting
+/// Returns the solution vector x for Ax = b
+fn solve_linear_system(mut a: Vec<Vec<f64>>, mut b: Vec<f64>) -> Option<Vec<f64>> {
+    let n = b.len();
+
+    // Forward elimination with partial pivoting
+    for i in 0..n {
+        // Find pivot
+        let mut max_row = i;
+        for k in (i + 1)..n {
+            if a[k][i].abs() > a[max_row][i].abs() {
+                max_row = k;
+            }
+        }
+
+        // Swap rows
+        a.swap(i, max_row);
+        b.swap(i, max_row);
+
+        // Check for singular matrix
+        if a[i][i].abs() < 1e-12 {
+            return None;
+        }
+
+        // Eliminate column
+        for k in (i + 1)..n {
+            let factor = a[k][i] / a[i][i];
+            b[k] -= factor * b[i];
+            for j in i..n {
+                a[k][j] -= factor * a[i][j];
+            }
+        }
+    }
+
+    // Back substitution
+    let mut x = vec![0.0; n];
+    for i in (0..n).rev() {
+        let mut sum = b[i];
+        for j in (i + 1)..n {
+            sum -= a[i][j] * x[j];
+        }
+        x[i] = sum / a[i][i];
+    }
+
+    Some(x)
+}
