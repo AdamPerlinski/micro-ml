@@ -125,3 +125,84 @@ fn solve_linear_system(mut a: Vec<Vec<f64>>, mut b: Vec<f64>) -> Option<Vec<f64>
 
     Some(x)
 }
+
+/// Internal implementation
+pub fn polynomial_regression_impl(x: &[f64], y: &[f64], degree: usize) -> Result<PolynomialModel, MlError> {
+    if x.len() != y.len() {
+        return Err(MlError::new("x and y arrays must have the same length"));
+    }
+
+    let n = x.len();
+    if n <= degree {
+        return Err(MlError::new(format!(
+            "Need at least {} data points for degree {} polynomial",
+            degree + 1,
+            degree
+        )));
+    }
+
+    if degree == 0 {
+        return Err(MlError::new("Degree must be at least 1"));
+    }
+
+    let m = degree + 1; // Number of coefficients
+
+    // Build X^T X matrix (m x m)
+    let mut xtx = vec![vec![0.0; m]; m];
+    for i in 0..m {
+        for j in 0..m {
+            for k in 0..n {
+                xtx[i][j] += x[k].powi((i + j) as i32);
+            }
+        }
+    }
+
+    // Build X^T y vector
+    let mut xty = vec![0.0; m];
+    for i in 0..m {
+        for k in 0..n {
+            xty[i] += x[k].powi(i as i32) * y[k];
+        }
+    }
+
+    // Solve the system
+    let coefficients = solve_linear_system(xtx, xty)
+        .ok_or_else(|| MlError::new("Failed to solve: matrix is singular or near-singular"))?;
+
+    // Calculate R-squared
+    let y_mean: f64 = y.iter().sum::<f64>() / n as f64;
+    let mut ss_res = 0.0;
+    let mut ss_tot = 0.0;
+
+    for i in 0..n {
+        let mut y_pred = 0.0;
+        for (j, &coef) in coefficients.iter().enumerate() {
+            y_pred += coef * x[i].powi(j as i32);
+        }
+        ss_res += (y[i] - y_pred).powi(2);
+        ss_tot += (y[i] - y_mean).powi(2);
+    }
+
+    let r_squared = if ss_tot == 0.0 { 1.0 } else { 1.0 - (ss_res / ss_tot) };
+
+    Ok(PolynomialModel {
+        coefficients,
+        degree,
+        r_squared,
+        n,
+    })
+}
+
+/// Fit a polynomial regression model using the normal equations
+/// Solves: (X^T X) β = X^T y where X is the Vandermonde matrix
+#[wasm_bindgen(js_name = "polynomialRegression")]
+pub fn polynomial_regression(x: &[f64], y: &[f64], degree: usize) -> Result<PolynomialModel, JsError> {
+    polynomial_regression_impl(x, y, degree).map_err(|e| JsError::new(&e.message))
+}
+
+/// Polynomial regression with auto-generated x values (0, 1, 2, ...)
+#[wasm_bindgen(js_name = "polynomialRegressionSimple")]
+pub fn polynomial_regression_simple(y: &[f64], degree: usize) -> Result<PolynomialModel, JsError> {
+    let x: Vec<f64> = (0..y.len()).map(|i| i as f64).collect();
+    polynomial_regression(&x, y, degree)
+}
