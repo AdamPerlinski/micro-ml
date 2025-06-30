@@ -206,3 +206,56 @@ pub fn polynomial_regression_simple(y: &[f64], degree: usize) -> Result<Polynomi
     let x: Vec<f64> = (0..y.len()).map(|i| i as f64).collect();
     polynomial_regression(&x, y, degree)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_quadratic_fit() {
+        // y = x² + 2x + 1 = (x + 1)²
+        let x: Vec<f64> = (-5..=5).map(|i| i as f64).collect();
+        let y: Vec<f64> = x.iter().map(|&xi| xi * xi + 2.0 * xi + 1.0).collect();
+
+        let model = polynomial_regression_impl(&x, &y, 2).unwrap();
+        let coefs = model.get_coefficients();
+
+        assert!((coefs[0] - 1.0).abs() < 1e-8);  // constant
+        assert!((coefs[1] - 2.0).abs() < 1e-8);  // linear
+        assert!((coefs[2] - 1.0).abs() < 1e-8);  // quadratic
+        assert!((model.r_squared - 1.0).abs() < 1e-8);
+    }
+
+    #[test]
+    fn test_cubic_fit() {
+        // y = x³ - x
+        let x: Vec<f64> = (-3..=3).map(|i| i as f64).collect();
+        let y: Vec<f64> = x.iter().map(|&xi| xi.powi(3) - xi).collect();
+
+        let model = polynomial_regression_impl(&x, &y, 3).unwrap();
+        let coefs = model.get_coefficients();
+
+        assert!((coefs[0]).abs() < 1e-8);         // constant
+        assert!((coefs[1] - (-1.0)).abs() < 1e-8); // linear
+        assert!((coefs[2]).abs() < 1e-8);         // quadratic
+        assert!((coefs[3] - 1.0).abs() < 1e-8);   // cubic
+    }
+
+    #[test]
+    fn test_prediction() {
+        let x = vec![0.0, 1.0, 2.0, 3.0, 4.0];
+        let y = vec![1.0, 4.0, 9.0, 16.0, 25.0]; // (x + 1)²
+
+        let model = polynomial_regression_impl(&x, &y, 2).unwrap();
+
+        assert!((model.predict_one(5.0) - 36.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_insufficient_data() {
+        let x = vec![1.0, 2.0];
+        let y = vec![1.0, 4.0];
+
+        assert!(polynomial_regression_impl(&x, &y, 2).is_err());
+    }
+}
