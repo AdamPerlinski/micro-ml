@@ -147,3 +147,40 @@ pub fn exponential_regression_simple(y: &[f64]) -> Result<ExponentialModel, JsEr
     let x: Vec<f64> = (0..y.len()).map(|i| i as f64).collect();
     exponential_regression(&x, y)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_exponential_fit() {
+        let x: Vec<f64> = (0..10).map(|i| i as f64).collect();
+        let y: Vec<f64> = x.iter().map(|&xi| 2.0 * (0.5 * xi).exp()).collect();
+        let model = exponential_regression_impl(&x, &y).unwrap();
+        assert!((model.a - 2.0).abs() < 1e-6);
+        assert!((model.b - 0.5).abs() < 1e-6);
+        assert!((model.r_squared - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_exponential_decay() {
+        let x: Vec<f64> = (0..20).map(|i| i as f64).collect();
+        let y: Vec<f64> = x.iter().map(|&xi| 100.0 * (-0.1 * xi).exp()).collect();
+        let model = exponential_regression_impl(&x, &y).unwrap();
+        assert!((model.a - 100.0).abs() < 1e-4);
+        assert!((model.b - (-0.1)).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_doubling_time() {
+        let model = ExponentialModel { a: 1.0, b: 2.0_f64.ln(), r_squared: 1.0, n: 10 };
+        assert!((model.doubling_time() - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_non_positive_error() {
+        let x = vec![1.0, 2.0, 3.0];
+        let y = vec![1.0, -2.0, 3.0];
+        assert!(exponential_regression_impl(&x, &y).is_err());
+    }
+}
