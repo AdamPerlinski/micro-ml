@@ -1,6 +1,7 @@
 mod error;
 mod linear;
 mod polynomial;
+mod exponential;
 
 use wasm_bindgen::prelude::*;
 pub use error::MlError;
@@ -13,3 +14,4 @@ pub fn init() {
 
 pub use linear::*;
 pub use polynomial::*;
+pub use exponential::*;
