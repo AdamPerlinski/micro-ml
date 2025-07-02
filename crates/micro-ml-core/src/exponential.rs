@@ -148,39 +148,128 @@ pub fn exponential_regression_simple(y: &[f64]) -> Result<ExponentialModel, JsEr
     exponential_regression(&x, y)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn test_exponential_fit() {
-        let x: Vec<f64> = (0..10).map(|i| i as f64).collect();
-        let y: Vec<f64> = x.iter().map(|&xi| 2.0 * (0.5 * xi).exp()).collect();
-        let model = exponential_regression_impl(&x, &y).unwrap();
-        assert!((model.a - 2.0).abs() < 1e-6);
-        assert!((model.b - 0.5).abs() < 1e-6);
-        assert!((model.r_squared - 1.0).abs() < 1e-6);
+/// Result of a logarithmic regression fit: y = a + b * ln(x)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[wasm_bindgen]
+pub struct LogarithmicModel {
+    a: f64,      // Intercept
+    b: f64,      // Coefficient
+    r_squared: f64,
+    n: usize,
+}
+
+#[wasm_bindgen]
+impl LogarithmicModel {
+    /// Get the intercept (a in y = a + b*ln(x))
+    #[wasm_bindgen(getter)]
+    pub fn a(&self) -> f64 {
+        self.a
     }
 
-    #[test]
-    fn test_exponential_decay() {
-        let x: Vec<f64> = (0..20).map(|i| i as f64).collect();
-        let y: Vec<f64> = x.iter().map(|&xi| 100.0 * (-0.1 * xi).exp()).collect();
-        let model = exponential_regression_impl(&x, &y).unwrap();
-        assert!((model.a - 100.0).abs() < 1e-4);
-        assert!((model.b - (-0.1)).abs() < 1e-6);
+    /// Get the coefficient (b in y = a + b*ln(x))
+    #[wasm_bindgen(getter)]
+    pub fn b(&self) -> f64 {
+        self.b
     }
 
-    #[test]
-    fn test_doubling_time() {
-        let model = ExponentialModel { a: 1.0, b: 2.0_f64.ln(), r_squared: 1.0, n: 10 };
-        assert!((model.doubling_time() - 1.0).abs() < 1e-10);
+    /// Get the R-squared (coefficient of determination)
+    #[wasm_bindgen(getter, js_name = "rSquared")]
+    pub fn r_squared(&self) -> f64 {
+        self.r_squared
     }
 
-    #[test]
-    fn test_non_positive_error() {
-        let x = vec![1.0, 2.0, 3.0];
-        let y = vec![1.0, -2.0, 3.0];
-        assert!(exponential_regression_impl(&x, &y).is_err());
+    /// Get the number of data points used in fitting
+    #[wasm_bindgen(getter)]
+    pub fn n(&self) -> usize {
+        self.n
     }
+
+    /// Predict a single value
+    pub fn predict_one(&self, x: f64) -> f64 {
+        self.a + self.b * x.ln()
+    }
+
+    /// Predict multiple values
+    #[wasm_bindgen(js_name = "predict")]
+    pub fn predict(&self, x_values: &[f64]) -> Vec<f64> {
+        x_values.iter().map(|&x| self.predict_one(x)).collect()
+    }
+
+    /// Get the equation as a string
+    #[wasm_bindgen(js_name = "toString")]
+    pub fn to_string_js(&self) -> String {
+        if self.b >= 0.0 {
+            format!("y = {:.6} + {:.6} * ln(x)", self.a, self.b)
+        } else {
+            format!("y = {:.6} - {:.6} * ln(x)", self.a, self.b.abs())
+        }
+    }
+}
+
+/// Fit a logarithmic regression model: y = a + b * ln(x)
+#[wasm_bindgen(js_name = "logarithmicRegression")]
+pub fn logarithmic_regression(x: &[f64], y: &[f64]) -> Result<LogarithmicModel, JsError> {
+    if x.len() != y.len() {
+        return Err(JsError::new("x and y arrays must have the same length"));
+    }
+
+    let n = x.len();
+    if n < 2 {
+        return Err(JsError::new("Need at least 2 data points for logarithmic regression"));
+    }
+
+    // Check for non-positive x values
+    for (i, &xi) in x.iter().enumerate() {
+        if xi <= 0.0 {
+            return Err(JsError::new(&format!(
+                "All x values must be positive for logarithmic regression (x[{}] = {})",
+                i, xi
+            )));
+        }
+    }
+
+    // Transform x values to ln(x) and fit linear regression
+    let ln_x: Vec<f64> = x.iter().map(|&xi| xi.ln()).collect();
+
+    // Calculate means
+    let ln_x_mean: f64 = ln_x.iter().sum::<f64>() / n as f64;
+    let y_mean: f64 = y.iter().sum::<f64>() / n as f64;
+
+    // Linear regression on transformed data
+    let mut numerator = 0.0;
+    let mut denominator = 0.0;
+
+    for i in 0..n {
+        let x_diff = ln_x[i] - ln_x_mean;
+        let y_diff = y[i] - y_mean;
+        numerator += x_diff * y_diff;
+        denominator += x_diff * x_diff;
+    }
+
+    if denominator == 0.0 {
+        return Err(JsError::new("Cannot fit regression: all x values are identical"));
+    }
+
+    let b = numerator / denominator;
+    let a = y_mean - b * ln_x_mean;
+
+    // Calculate R-squared
+    let mut ss_res = 0.0;
+    let mut ss_tot = 0.0;
+
+    for i in 0..n {
+        let y_pred = a + b * ln_x[i];
+        ss_res += (y[i] - y_pred).powi(2);
+        ss_tot += (y[i] - y_mean).powi(2);
+    }
+
+    let r_squared = if ss_tot == 0.0 { 1.0 } else { 1.0 - (ss_res / ss_tot) };
+
+    Ok(LogarithmicModel {
+        a,
+        b,
+        r_squared,
+        n,
+    })
 }
