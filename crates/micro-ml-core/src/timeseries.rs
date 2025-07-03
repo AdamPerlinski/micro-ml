@@ -35,3 +35,30 @@ fn calc_sma(data: &[f64], window: usize) -> Vec<f64> {
 
     result
 }
+
+/// Calculate Exponential Moving Average
+/// Uses smoothing factor: α = 2 / (window + 1)
+fn calc_ema(data: &[f64], window: usize) -> Vec<f64> {
+    let n = data.len();
+    let mut result = vec![f64::NAN; n];
+
+    if window == 0 || window > n {
+        return result;
+    }
+
+    let alpha = 2.0 / (window as f64 + 1.0);
+
+    // First EMA value is the SMA of the first window
+    let first_sma: f64 = data[..window].iter().sum::<f64>() / window as f64;
+    result[window - 1] = first_sma;
+
+    // Calculate subsequent EMA values
+    let mut prev_ema = first_sma;
+    for i in window..n {
+        let ema = alpha * data[i] + (1.0 - alpha) * prev_ema;
+        result[i] = ema;
+        prev_ema = ema;
+    }
+
+    result
+}
