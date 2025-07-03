@@ -62,3 +62,57 @@ fn calc_ema(data: &[f64], window: usize) -> Vec<f64> {
 
     result
 }
+
+/// Calculate Weighted Moving Average
+/// Uses linearly decreasing weights: w_i = window - i for i in 0..window
+fn calc_wma(data: &[f64], window: usize) -> Vec<f64> {
+    let n = data.len();
+    let mut result = vec![f64::NAN; n];
+
+    if window == 0 || window > n {
+        return result;
+    }
+
+    // Calculate weight sum: 1 + 2 + ... + window = window * (window + 1) / 2
+    let weight_sum = (window * (window + 1)) as f64 / 2.0;
+
+    for i in (window - 1)..n {
+        let mut weighted_sum = 0.0;
+        let start_idx = i + 1 - window; // Safe: i >= window - 1
+        for j in 0..window {
+            let weight = (j + 1) as f64;
+            weighted_sum += weight * data[start_idx + j];
+        }
+        result[i] = weighted_sum / weight_sum;
+    }
+
+    result
+}
+
+/// Calculate a moving average
+#[wasm_bindgen(js_name = "movingAverage")]
+pub fn moving_average(data: &[f64], window: usize, ma_type: MovingAverageType) -> Vec<f64> {
+    match ma_type {
+        MovingAverageType::SMA => calc_sma(data, window),
+        MovingAverageType::EMA => calc_ema(data, window),
+        MovingAverageType::WMA => calc_wma(data, window),
+    }
+}
+
+/// Calculate SMA (convenience function)
+#[wasm_bindgen(js_name = "sma")]
+pub fn sma(data: &[f64], window: usize) -> Vec<f64> {
+    calc_sma(data, window)
+}
+
+/// Calculate EMA (convenience function)
+#[wasm_bindgen(js_name = "ema")]
+pub fn ema(data: &[f64], window: usize) -> Vec<f64> {
+    calc_ema(data, window)
+}
+
+/// Calculate WMA (convenience function)
+#[wasm_bindgen(js_name = "wma")]
+pub fn wma(data: &[f64], window: usize) -> Vec<f64> {
+    calc_wma(data, window)
+}
