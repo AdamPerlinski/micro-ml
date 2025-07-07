@@ -261,3 +261,25 @@ pub fn momentum(data: &[f64], periods: usize) -> Vec<f64> {
 
     result
 }
+
+/// Smooth data using exponential smoothing (single)
+#[wasm_bindgen(js_name = "exponentialSmoothing")]
+pub fn exponential_smoothing(data: &[f64], alpha: f64) -> Result<Vec<f64>, JsError> {
+    if !(0.0..=1.0).contains(&alpha) {
+        return Err(JsError::new("Alpha must be between 0 and 1"));
+    }
+
+    if data.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let mut result = Vec::with_capacity(data.len());
+    result.push(data[0]); // First value is the same
+
+    for i in 1..data.len() {
+        let smoothed = alpha * data[i] + (1.0 - alpha) * result[i - 1];
+        result.push(smoothed);
+    }
+
+    Ok(result)
+}
