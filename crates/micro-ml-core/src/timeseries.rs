@@ -225,3 +225,39 @@ pub fn trend_forecast(data: &[f64], periods: usize) -> Result<TrendAnalysis, JsE
         forecast,
     })
 }
+
+/// Calculate the rate of change (ROC) as percentage
+#[wasm_bindgen(js_name = "rateOfChange")]
+pub fn rate_of_change(data: &[f64], periods: usize) -> Vec<f64> {
+    let n = data.len();
+    let mut result = vec![f64::NAN; n];
+
+    if periods == 0 || periods >= n {
+        return result;
+    }
+
+    for i in periods..n {
+        if data[i - periods] != 0.0 {
+            result[i] = ((data[i] - data[i - periods]) / data[i - periods]) * 100.0;
+        }
+    }
+
+    result
+}
+
+/// Calculate momentum (difference from n periods ago)
+#[wasm_bindgen]
+pub fn momentum(data: &[f64], periods: usize) -> Vec<f64> {
+    let n = data.len();
+    let mut result = vec![f64::NAN; n];
+
+    if periods == 0 || periods >= n {
+        return result;
+    }
+
+    for i in periods..n {
+        result[i] = data[i] - data[i - periods];
+    }
+
+    result
+}
