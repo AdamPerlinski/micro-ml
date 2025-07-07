@@ -283,3 +283,39 @@ pub fn exponential_smoothing(data: &[f64], alpha: f64) -> Result<Vec<f64>, JsErr
 
     Ok(result)
 }
+
+/// Detect peaks in data (local maxima)
+#[wasm_bindgen(js_name = "findPeaks")]
+pub fn find_peaks(data: &[f64]) -> Vec<usize> {
+    if data.len() < 3 {
+        return vec![];
+    }
+
+    let mut peaks = Vec::new();
+
+    for i in 1..(data.len() - 1) {
+        if data[i] > data[i - 1] && data[i] > data[i + 1] {
+            peaks.push(i);
+        }
+    }
+
+    peaks
+}
+
+/// Detect troughs in data (local minima)
+#[wasm_bindgen(js_name = "findTroughs")]
+pub fn find_troughs(data: &[f64]) -> Vec<usize> {
+    if data.len() < 3 {
+        return vec![];
+    }
+
+    let mut troughs = Vec::new();
+
+    for i in 1..(data.len() - 1) {
+        if data[i] < data[i - 1] && data[i] < data[i + 1] {
+            troughs.push(i);
+        }
+    }
+
+    troughs
+}

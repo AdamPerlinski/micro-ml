@@ -2,6 +2,7 @@ mod error;
 mod linear;
 mod polynomial;
 mod exponential;
+mod timeseries;
 
 use wasm_bindgen::prelude::*;
 pub use error::MlError;
@@ -12,6 +13,8 @@ pub fn init() {
     console_error_panic_hook::set_once();
 }
 
+// Re-export all public types and functions
 pub use linear::*;
 pub use polynomial::*;
 pub use exponential::*;
+pub use timeseries::*;
