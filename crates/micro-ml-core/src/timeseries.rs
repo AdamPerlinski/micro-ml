@@ -261,3 +261,160 @@ pub fn momentum(data: &[f64], periods: usize) -> Vec<f64> {
 
     result
 }
+
+/// Smooth data using exponential smoothing (single)
+#[wasm_bindgen(js_name = "exponentialSmoothing")]
+pub fn exponential_smoothing(data: &[f64], alpha: f64) -> Result<Vec<f64>, JsError> {
+    if !(0.0..=1.0).contains(&alpha) {
+        return Err(JsError::new("Alpha must be between 0 and 1"));
+    }
+
+    if data.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let mut result = Vec::with_capacity(data.len());
+    result.push(data[0]); // First value is the same
+
+    for i in 1..data.len() {
+        let smoothed = alpha * data[i] + (1.0 - alpha) * result[i - 1];
+        result.push(smoothed);
+    }
+
+    Ok(result)
+}
+
+/// Detect peaks in data (local maxima)
+#[wasm_bindgen(js_name = "findPeaks")]
+pub fn find_peaks(data: &[f64]) -> Vec<usize> {
+    if data.len() < 3 {
+        return vec![];
+    }
+
+    let mut peaks = Vec::new();
+
+    for i in 1..(data.len() - 1) {
+        if data[i] > data[i - 1] && data[i] > data[i + 1] {
+            peaks.push(i);
+        }
+    }
+
+    peaks
+}
+
+/// Detect troughs in data (local minima)
+#[wasm_bindgen(js_name = "findTroughs")]
+pub fn find_troughs(data: &[f64]) -> Vec<usize> {
+    if data.len() < 3 {
+        return vec![];
+    }
+
+    let mut troughs = Vec::new();
+
+    for i in 1..(data.len() - 1) {
+        if data[i] < data[i - 1] && data[i] < data[i + 1] {
+            troughs.push(i);
+        }
+    }
+
+    troughs
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sma() {
+        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let result = sma(&data, 3);
+
+        assert!(result[0].is_nan());
+        assert!(result[1].is_nan());
+        assert!((result[2] - 2.0).abs() < 1e-10);
+        assert!((result[3] - 3.0).abs() < 1e-10);
+        assert!((result[4] - 4.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_wma() {
+        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let result = wma(&data, 3);
+
+        // WMA for window 3: (1*1 + 2*2 + 3*3) / 6 = 14/6 = 2.333...
+        assert!(result[0].is_nan());
+        assert!(result[1].is_nan());
+        assert!((result[2] - 14.0 / 6.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_trend_forecast_up() {
+        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let result = trend_forecast(&data, 3).unwrap();
+
+        assert_eq!(result.direction(), TrendDirection::Up);
+        assert!((result.slope() - 1.0).abs() < 1e-10);
+        assert!((result.strength() - 1.0).abs() < 1e-10);
+
+        let forecast = result.get_forecast();
+        assert!((forecast[0] - 6.0).abs() < 1e-10);
+        assert!((forecast[1] - 7.0).abs() < 1e-10);
+        assert!((forecast[2] - 8.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_trend_forecast_down() {
+        let data = vec![5.0, 4.0, 3.0, 2.0, 1.0];
+        let result = trend_forecast(&data, 2).unwrap();
+
+        assert_eq!(result.direction(), TrendDirection::Down);
+        assert!((result.slope() - (-1.0)).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_rate_of_change() {
+        let data = vec![100.0, 110.0, 121.0, 133.1];
+        let result = rate_of_change(&data, 1);
+
+        assert!(result[0].is_nan());
+        assert!((result[1] - 10.0).abs() < 1e-10);
+        assert!((result[2] - 10.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_momentum() {
+        let data = vec![1.0, 3.0, 6.0, 10.0];
+        let result = momentum(&data, 2);
+
+        assert!(result[0].is_nan());
+        assert!(result[1].is_nan());
+        assert!((result[2] - 5.0).abs() < 1e-10); // 6 - 1
+        assert!((result[3] - 7.0).abs() < 1e-10); // 10 - 3
+    }
+
+    #[test]
+    fn test_find_peaks() {
+        let data = vec![1.0, 3.0, 2.0, 5.0, 1.0];
+        let peaks = find_peaks(&data);
+
+        assert_eq!(peaks, vec![1, 3]);
+    }
+
+    #[test]
+    fn test_find_troughs() {
+        let data = vec![3.0, 1.0, 4.0, 2.0, 5.0];
+        let troughs = find_troughs(&data);
+
+        assert_eq!(troughs, vec![1, 3]);
+    }
+
+    #[test]
+    fn test_exponential_smoothing() {
+        let data = vec![10.0, 20.0, 15.0, 25.0];
+        let result = exponential_smoothing(&data, 0.5).unwrap();
+
+        assert!((result[0] - 10.0).abs() < 1e-10);
+        assert!((result[1] - 15.0).abs() < 1e-10); // 0.5*20 + 0.5*10
+        assert!((result[2] - 15.0).abs() < 1e-10); // 0.5*15 + 0.5*15
+    }
+}
