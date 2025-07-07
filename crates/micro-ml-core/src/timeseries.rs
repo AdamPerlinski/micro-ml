@@ -116,3 +116,112 @@ pub fn ema(data: &[f64], window: usize) -> Vec<f64> {
 pub fn wma(data: &[f64], window: usize) -> Vec<f64> {
     calc_wma(data, window)
 }
+
+/// Trend direction
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum TrendDirection {
+    Up,
+    Down,
+    Flat,
+}
+
+/// Trend analysis result
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[wasm_bindgen]
+pub struct TrendAnalysis {
+    direction: TrendDirection,
+    slope: f64,
+    strength: f64,  // 0-1, based on R²
+    forecast: Vec<f64>,
+}
+
+#[wasm_bindgen]
+impl TrendAnalysis {
+    /// Get the trend direction
+    #[wasm_bindgen(getter)]
+    pub fn direction(&self) -> TrendDirection {
+        self.direction
+    }
+
+    /// Get the slope (rate of change per period)
+    #[wasm_bindgen(getter)]
+    pub fn slope(&self) -> f64 {
+        self.slope
+    }
+
+    /// Get the trend strength (0-1, based on R²)
+    #[wasm_bindgen(getter)]
+    pub fn strength(&self) -> f64 {
+        self.strength
+    }
+
+    /// Get the forecasted values
+    #[wasm_bindgen(js_name = "getForecast")]
+    pub fn get_forecast(&self) -> Vec<f64> {
+        self.forecast.clone()
+    }
+}
+
+/// Analyze trend and forecast future values
+#[wasm_bindgen(js_name = "trendForecast")]
+pub fn trend_forecast(data: &[f64], periods: usize) -> Result<TrendAnalysis, JsError> {
+    if data.len() < 2 {
+        return Err(JsError::new("Need at least 2 data points for trend analysis"));
+    }
+
+    let n = data.len();
+    let x: Vec<f64> = (0..n).map(|i| i as f64).collect();
+
+    // Linear regression
+    let x_mean: f64 = x.iter().sum::<f64>() / n as f64;
+    let y_mean: f64 = data.iter().sum::<f64>() / n as f64;
+
+    let mut numerator = 0.0;
+    let mut denominator = 0.0;
+
+    for i in 0..n {
+        let x_diff = x[i] - x_mean;
+        let y_diff = data[i] - y_mean;
+        numerator += x_diff * y_diff;
+        denominator += x_diff * x_diff;
+    }
+
+    let slope = if denominator == 0.0 { 0.0 } else { numerator / denominator };
+    let intercept = y_mean - slope * x_mean;
+
+    // Calculate R² for strength
+    let mut ss_res = 0.0;
+    let mut ss_tot = 0.0;
+
+    for i in 0..n {
+        let y_pred = slope * x[i] + intercept;
+        ss_res += (data[i] - y_pred).powi(2);
+        ss_tot += (data[i] - y_mean).powi(2);
+    }
+
+    let r_squared = if ss_tot == 0.0 { 1.0 } else { 1.0 - (ss_res / ss_tot) };
+
+    // Determine direction
+    let direction = if slope.abs() < 1e-10 {
+        TrendDirection::Flat
+    } else if slope > 0.0 {
+        TrendDirection::Up
+    } else {
+        TrendDirection::Down
+    };
+
+    // Generate forecast
+    let mut forecast = Vec::with_capacity(periods);
+    for i in 0..periods {
+        let x_val = (n + i) as f64;
+        forecast.push(slope * x_val + intercept);
+    }
+
+    Ok(TrendAnalysis {
+        direction,
+        slope,
+        strength: r_squared,
+        forecast,
+    })
+}
