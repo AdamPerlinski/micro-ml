@@ -319,3 +319,102 @@ pub fn find_troughs(data: &[f64]) -> Vec<usize> {
 
     troughs
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sma() {
+        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let result = sma(&data, 3);
+
+        assert!(result[0].is_nan());
+        assert!(result[1].is_nan());
+        assert!((result[2] - 2.0).abs() < 1e-10);
+        assert!((result[3] - 3.0).abs() < 1e-10);
+        assert!((result[4] - 4.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_wma() {
+        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let result = wma(&data, 3);
+
+        // WMA for window 3: (1*1 + 2*2 + 3*3) / 6 = 14/6 = 2.333...
+        assert!(result[0].is_nan());
+        assert!(result[1].is_nan());
+        assert!((result[2] - 14.0 / 6.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_trend_forecast_up() {
+        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let result = trend_forecast(&data, 3).unwrap();
+
+        assert_eq!(result.direction(), TrendDirection::Up);
+        assert!((result.slope() - 1.0).abs() < 1e-10);
+        assert!((result.strength() - 1.0).abs() < 1e-10);
+
+        let forecast = result.get_forecast();
+        assert!((forecast[0] - 6.0).abs() < 1e-10);
+        assert!((forecast[1] - 7.0).abs() < 1e-10);
+        assert!((forecast[2] - 8.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_trend_forecast_down() {
+        let data = vec![5.0, 4.0, 3.0, 2.0, 1.0];
+        let result = trend_forecast(&data, 2).unwrap();
+
+        assert_eq!(result.direction(), TrendDirection::Down);
+        assert!((result.slope() - (-1.0)).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_rate_of_change() {
+        let data = vec![100.0, 110.0, 121.0, 133.1];
+        let result = rate_of_change(&data, 1);
+
+        assert!(result[0].is_nan());
+        assert!((result[1] - 10.0).abs() < 1e-10);
+        assert!((result[2] - 10.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_momentum() {
+        let data = vec![1.0, 3.0, 6.0, 10.0];
+        let result = momentum(&data, 2);
+
+        assert!(result[0].is_nan());
+        assert!(result[1].is_nan());
+        assert!((result[2] - 5.0).abs() < 1e-10); // 6 - 1
+        assert!((result[3] - 7.0).abs() < 1e-10); // 10 - 3
+    }
+
+    #[test]
+    fn test_find_peaks() {
+        let data = vec![1.0, 3.0, 2.0, 5.0, 1.0];
+        let peaks = find_peaks(&data);
+
+        assert_eq!(peaks, vec![1, 3]);
+    }
+
+    #[test]
+    fn test_find_troughs() {
+        let data = vec![3.0, 1.0, 4.0, 2.0, 5.0];
+        let troughs = find_troughs(&data);
+
+        assert_eq!(troughs, vec![1, 3]);
+    }
+
+    #[test]
+    fn test_exponential_smoothing() {
+        let data = vec![10.0, 20.0, 15.0, 25.0];
+        let result = exponential_smoothing(&data, 0.5).unwrap();
+
+        assert!((result[0] - 10.0).abs() < 1e-10);
+        assert!((result[1] - 15.0).abs() < 1e-10); // 0.5*20 + 0.5*10
+        assert!((result[2] - 15.0).abs() < 1e-10); // 0.5*15 + 0.5*15
+    }
+}
