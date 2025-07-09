@@ -1,0 +1,59 @@
+{
+  "name": "micro-ml",
+  "version": "0.1.0",
+  "description": "A tiny, blazing-fast WASM-powered regression library",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./worker": {
+      "import": "./dist/worker.js",
+      "types": "./dist/worker.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "wasm"
+  ],
+  "scripts": {
+    "build": "tsup && cp wasm/micro_ml_core_bg.wasm dist/",
+    "build:wasm": "cd ../../crates/micro-ml-core && wasm-pack build --target web --out-dir ../../packages/micro-ml/wasm",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist wasm"
+  },
+  "keywords": [
+    "machine-learning",
+    "regression",
+    "wasm",
+    "webassembly",
+    "linear-regression",
+    "polynomial-regression",
+    "time-series",
+    "forecasting",
+    "statistics",
+    "tiny"
+  ],
+  "author": "Adam Perliński",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AdamPerlinski/micro-ml"
+  },
+  "homepage": "https://github.com/AdamPerlinski/micro-ml#readme",
+  "bugs": {
+    "url": "https://github.com/AdamPerlinski/micro-ml/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.1",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}
