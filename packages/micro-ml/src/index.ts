@@ -428,3 +428,64 @@ export async function exponentialSmoothing(
   const alpha = options.alpha ?? 0.3;
   return Array.from(wasm.exponentialSmoothing(new Float64Array(data), alpha));
 }
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Find peaks (local maxima) in data
+ * Returns indices of peak values.
+ */
+export async function findPeaks(data: number[]): Promise<number[]> {
+  const wasm = await ensureInit();
+  return Array.from(wasm.findPeaks(new Float64Array(data)));
+}
+
+/**
+ * Find troughs (local minima) in data
+ * Returns indices of trough values.
+ */
+export async function findTroughs(data: number[]): Promise<number[]> {
+  const wasm = await ensureInit();
+  return Array.from(wasm.findTroughs(new Float64Array(data)));
+}
+
+// ============================================================================
+// Convenience functions for one-liner usage
+// ============================================================================
+
+/**
+ * Quick predict: fit model and get predictions in one call
+ *
+ * @example
+ * ```ts
+ * const predictions = await predict(xData, yData, [100, 200, 300]);
+ * ```
+ */
+export async function predict(
+  xTrain: number[],
+  yTrain: number[],
+  xPredict: number[]
+): Promise<number[]> {
+  const model = await linearRegression(xTrain, yTrain);
+  return model.predict(xPredict);
+}
+
+/**
+ * Quick trend line: fit model and extrapolate
+ *
+ * @example
+ * ```ts
+ * const future = await trendLine(data, 10); // Next 10 points
+ * ```
+ */
+export async function trendLine(
+  data: number[],
+  futurePoints: number
+): Promise<{ model: LinearModel; trend: number[] }> {
+  const model = await linearRegressionSimple(data);
+  const futureX = Array.from({ length: futurePoints }, (_, i) => data.length + i);
+  const trend = model.predict(futureX);
+  return { model, trend };
+}
