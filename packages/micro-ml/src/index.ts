@@ -301,3 +301,130 @@ export async function powerRegression(
   const wasmModel = wasm.powerRegression(new Float64Array(x), new Float64Array(y));
   return wrapPowerModel(wasmModel);
 }
+
+// ============================================================================
+// Moving Averages
+// ============================================================================
+
+/**
+ * Calculate a moving average
+ *
+ * @example
+ * ```ts
+ * const smoothed = await movingAverage(data, { window: 7, type: 'ema' });
+ * ```
+ */
+export async function movingAverage(
+  data: number[],
+  options: MovingAverageOptions
+): Promise<number[]> {
+  const wasm = await ensureInit();
+  const type = options.type ?? 'sma';
+  const typeEnum = type === 'ema' ? wasm.MovingAverageType.EMA
+    : type === 'wma' ? wasm.MovingAverageType.WMA
+    : wasm.MovingAverageType.SMA;
+
+  return Array.from(
+    wasm.movingAverage(new Float64Array(data), options.window, typeEnum)
+  );
+}
+
+/**
+ * Calculate Simple Moving Average
+ */
+export async function sma(data: number[], window: number): Promise<number[]> {
+  const wasm = await ensureInit();
+  return Array.from(wasm.sma(new Float64Array(data), window));
+}
+
+/**
+ * Calculate Exponential Moving Average
+ */
+export async function ema(data: number[], window: number): Promise<number[]> {
+  const wasm = await ensureInit();
+  return Array.from(wasm.ema(new Float64Array(data), window));
+}
+
+/**
+ * Calculate Weighted Moving Average
+ */
+export async function wma(data: number[], window: number): Promise<number[]> {
+  const wasm = await ensureInit();
+  return Array.from(wasm.wma(new Float64Array(data), window));
+}
+
+// ============================================================================
+// Trend Analysis & Forecasting
+// ============================================================================
+
+/**
+ * Analyze trend and forecast future values
+ *
+ * @example
+ * ```ts
+ * const trend = await trendForecast(data, 10);
+ * console.log(trend.direction); // 'up'
+ * console.log(trend.slope); // 10
+ * console.log(trend.getForecast()); // [50, 60, 70]
+ * ```
+ */
+export async function trendForecast(
+  data: number[],
+  periods: number
+): Promise<TrendAnalysis> {
+  const wasm = await ensureInit();
+  const result = wasm.trendForecast(new Float64Array(data), periods);
+
+  // Map direction enum to string
+  const directionMap: Record<number, 'up' | 'down' | 'flat'> = {
+    [wasm.TrendDirection.Up]: 'up',
+    [wasm.TrendDirection.Down]: 'down',
+    [wasm.TrendDirection.Flat]: 'flat',
+  };
+
+  return {
+    direction: directionMap[result.direction],
+    slope: result.slope,
+    strength: result.strength,
+    getForecast: () => Array.from(result.getForecast()),
+  };
+}
+
+/**
+ * Calculate rate of change as percentage
+ */
+export async function rateOfChange(
+  data: number[],
+  periods: number
+): Promise<number[]> {
+  const wasm = await ensureInit();
+  return Array.from(wasm.rateOfChange(new Float64Array(data), periods));
+}
+
+/**
+ * Calculate momentum (difference from n periods ago)
+ */
+export async function momentum(
+  data: number[],
+  periods: number
+): Promise<number[]> {
+  const wasm = await ensureInit();
+  return Array.from(wasm.momentum(new Float64Array(data), periods));
+}
+
+/**
+ * Apply exponential smoothing to data
+ *
+ * @example
+ * ```ts
+ * const smoothed = await exponentialSmoothing([10, 20, 15, 25], { alpha: 0.3 });
+ * ```
+ */
+export async function exponentialSmoothing(
+  data: number[],
+  options: SmoothingOptions = {}
+): Promise<number[]> {
+  const wasm = await ensureInit();
+  const alpha = options.alpha ?? 0.3;
+  return Array.from(wasm.exponentialSmoothing(new Float64Array(data), alpha));
+}
