@@ -1,0 +1,15 @@
+{
+  "name": "micro-ml-benchmarks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench": "node --experimental-wasm-modules benchmark.js",
+    "bench:compare": "node --experimental-wasm-modules compare.js"
+  },
+  "dependencies": {
+    "micro-ml": "workspace:*"
+  },
+  "devDependencies": {
+    "simple-statistics": "^7.8.0"
+  }
+}
