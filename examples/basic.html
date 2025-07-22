@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>micro-ml Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #0a0a0a;
+      color: #e0e0e0;
+    }
+    h1 {
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #888;
+      margin-bottom: 30px;
+    }
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      color: #fff;
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+    canvas {
+      background: #0d0d0d;
+      border-radius: 4px;
+      width: 100%;
+      height: 250px;
+    }
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .stat {
+      background: #252525;
+      padding: 12px;
+      border-radius: 4px;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #4ade80;
+      margin-top: 4px;
+    }
+    .equation {
+      font-family: 'Courier New', monospace;
+      background: #252525;
+      padding: 10px 15px;
+      border-radius: 4px;
+      margin-top: 15px;
+      color: #fbbf24;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    select {
+      background: #252525;
+      color: white;
+      border: 1px solid #444;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .loading {
+      color: #888;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>micro-ml</h1>
+  <p class="subtitle">Tiny, blazing-fast WASM-powered regression</p>
+
+  <div class="card">
+    <h2>Linear Regression Demo</h2>
+    <div class="controls">
+      <button id="regenerate">Regenerate Data</button>
+      <select id="noiseLevel">
+        <option value="0.1">Low Noise</option>
+        <option value="0.3" selected>Medium Noise</option>
+        <option value="0.6">High Noise</option>
+      </select>
+    </div>
+    <canvas id="linearChart"></canvas>
+    <div class="results">
+      <div class="stat">
+        <div class="stat-label">Slope</div>
+        <div class="stat-value" id="slope">-</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Intercept</div>
+        <div class="stat-value" id="intercept">-</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">R²</div>
+        <div class="stat-value" id="rsquared">-</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Time</div>
+        <div class="stat-value" id="time">-</div>
+      </div>
+    </div>
+    <div class="equation" id="equation">Loading WASM...</div>
+  </div>
+
+  <div class="card">
+    <h2>Trend Forecast Demo</h2>
+    <canvas id="trendChart"></canvas>
+    <div class="results">
+      <div class="stat">
+        <div class="stat-label">Direction</div>
+        <div class="stat-value" id="direction">-</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Strength</div>
+        <div class="stat-value" id="strength">-</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Forecast</div>
+        <div class="stat-value" id="forecast">-</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import micro-ml
+    import { init, linearRegression, trendForecast, sma } from '../packages/micro-ml/dist/index.js';
+
+    // Initialize WASM
+    await init();
+    document.getElementById('equation').textContent = 'WASM loaded ✓';
+
+    // Canvas setup
+    function setupCanvas(id) {
+      const canvas = document.getElementById(id);
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      return { canvas, ctx, width: rect.width, height: rect.height };
+    }
+
+    // Generate noisy linear data
+    function generateData(n, noise) {
+      const trueSlope = 2 + Math.random() * 2;
+      const trueIntercept = 5 + Math.random() * 10;
+
+      const x = Array.from({ length: n }, (_, i) => i);
+      const y = x.map(xi =>
+        trueSlope * xi + trueIntercept + (Math.random() - 0.5) * noise * 50
+      );
+
+      return { x, y, trueSlope, trueIntercept };
+    }
+
+    // Draw scatter plot with regression line
+    function drawLinearPlot(ctx, width, height, x, y, model) {
+      ctx.clearRect(0, 0, width, height);
+
+      const padding = 40;
+      const plotWidth = width - padding * 2;
+      const plotHeight = height - padding * 2;
+
+      const xMin = Math.min(...x);
+      const xMax = Math.max(...x);
+      const yMin = Math.min(...y);
+      const yMax = Math.max(...y);
+
+      const xScale = plotWidth / (xMax - xMin);
+      const yScale = plotHeight / (yMax - yMin);
+
+      const toCanvasX = (xi) => padding + (xi - xMin) * xScale;
+      const toCanvasY = (yi) => height - padding - (yi - yMin) * yScale;
+
+      // Draw data points
+      ctx.fillStyle = '#3b82f6';
+      for (let i = 0; i < x.length; i++) {
+        ctx.beginPath();
+        ctx.arc(toCanvasX(x[i]), toCanvasY(y[i]), 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw regression line
+      ctx.strokeStyle = '#4ade80';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const y1 = model.slope * xMin + model.intercept;
+      const y2 = model.slope * xMax + model.intercept;
+      ctx.moveTo(toCanvasX(xMin), toCanvasY(y1));
+      ctx.lineTo(toCanvasX(xMax), toCanvasY(y2));
+      ctx.stroke();
+    }
+
+    // Draw trend forecast
+    function drawTrendPlot(ctx, width, height, data, forecast) {
+      ctx.clearRect(0, 0, width, height);
+
+      const padding = 40;
+      const plotWidth = width - padding * 2;
+      const plotHeight = height - padding * 2;
+
+      const allData = [...data, ...forecast];
+      const yMin = Math.min(...allData);
+      const yMax = Math.max(...allData);
+      const xMax = allData.length - 1;
+
+      const xScale = plotWidth / xMax;
+      const yScale = plotHeight / (yMax - yMin || 1);
+
+      const toCanvasX = (i) => padding + i * xScale;
+      const toCanvasY = (yi) => height - padding - (yi - yMin) * yScale;
+
+      // Draw historical data
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      data.forEach((y, i) => {
+        if (i === 0) ctx.moveTo(toCanvasX(i), toCanvasY(y));
+        else ctx.lineTo(toCanvasX(i), toCanvasY(y));
+      });
+      ctx.stroke();
+
+      // Draw forecast
+      ctx.strokeStyle = '#4ade80';
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(data.length - 1), toCanvasY(data[data.length - 1]));
+      forecast.forEach((y, i) => {
+        ctx.lineTo(toCanvasX(data.length + i), toCanvasY(y));
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw separation line
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(data.length - 1), padding);
+      ctx.lineTo(toCanvasX(data.length - 1), height - padding);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Run linear regression demo
+    async function runLinearDemo() {
+      const noise = parseFloat(document.getElementById('noiseLevel').value);
+      const { x, y } = generateData(100, noise);
+
+      const start = performance.now();
+      const model = await linearRegression(x, y);
+      const elapsed = performance.now() - start;
+
+      document.getElementById('slope').textContent = model.slope.toFixed(3);
+      document.getElementById('intercept').textContent = model.intercept.toFixed(3);
+      document.getElementById('rsquared').textContent = model.rSquared.toFixed(4);
+      document.getElementById('time').textContent = elapsed.toFixed(2) + 'ms';
+      document.getElementById('equation').textContent = model.toString();
+
+      const { ctx, width, height } = setupCanvas('linearChart');
+      drawLinearPlot(ctx, width, height, x, y, model);
+    }
+
+    // Run trend forecast demo
+    async function runTrendDemo() {
+      // Generate some trending data with noise
+      const data = [];
+      let value = 50;
+      for (let i = 0; i < 50; i++) {
+        value += (Math.random() - 0.3) * 5; // Upward trend
+        data.push(value);
+      }
+
+      const trend = await trendForecast(data, 10);
+      const forecast = trend.getForecast();
+
+      document.getElementById('direction').textContent =
+        trend.direction === 'up' ? '↑ Up' :
+        trend.direction === 'down' ? '↓ Down' : '→ Flat';
+      document.getElementById('strength').textContent =
+        (trend.strength * 100).toFixed(1) + '%';
+      document.getElementById('forecast').textContent =
+        forecast[forecast.length - 1].toFixed(1);
+
+      const { ctx, width, height } = setupCanvas('trendChart');
+      drawTrendPlot(ctx, width, height, data, forecast);
+    }
+
+    // Initial run
+    runLinearDemo();
+    runTrendDemo();
+
+    // Event listeners
+    document.getElementById('regenerate').addEventListener('click', () => {
+      runLinearDemo();
+      runTrendDemo();
+    });
+    document.getElementById('noiseLevel').addEventListener('change', runLinearDemo);
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      runLinearDemo();
+      runTrendDemo();
+    });
+  </script>
+</body>
+</html>
