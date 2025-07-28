@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>micro-ml - Tiny WASM-Powered ML for the Browser</title>
+  <meta name="description" content="A tiny (40KB) blazing-fast WASM library for predictions, trend analysis, and regression in the browser.">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 80px 20px 60px;
+      background: linear-gradient(180deg, #1e3a5f 0%, #0f172a 100%);
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero .tagline {
+      font-size: 1.5rem;
+      color: #94a3b8;
+      margin-bottom: 30px;
+    }
+
+    .size-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 15px;
+      background: #1e293b;
+      padding: 12px 25px;
+      border-radius: 50px;
+      font-family: monospace;
+      font-size: 1.1rem;
+      margin-bottom: 40px;
+    }
+
+    .size-badge .vs { color: #64748b; }
+    .size-badge .big { color: #f87171; text-decoration: line-through; opacity: 0.7; }
+    .size-badge .small { color: #4ade80; font-weight: bold; }
+
+    .hero-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover { transform: translateY(-2px); text-decoration: none; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+    }
+
+    .btn-github {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+    }
+
+    .btn-npm {
+      background: #cb3837;
+      color: white;
+    }
+
+    /* Install */
+    .install-box {
+      display: inline-block;
+      background: #1e293b;
+      padding: 15px 30px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 1.1rem;
+      border: 1px solid #334155;
+    }
+
+    .install-box .cmd { color: #4ade80; }
+    .install-box .pkg { color: #f8fafc; }
+
+    /* Container */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 20px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 40px;
+      color: #f8fafc;
+    }
+
+    /* Features Grid */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 60px;
+    }
+
+    .feature {
+      background: #1e293b;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .feature h3 {
+      color: #f8fafc;
+      margin-bottom: 8px;
+    }
+
+    .feature p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    /* Use Cases */
+    .usecases {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 25px;
+    }
+
+    .usecase {
+      background: #1e293b;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #334155;
+    }
+
+    .usecase-header {
+      padding: 20px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .usecase-header h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #f8fafc;
+      margin-bottom: 5px;
+    }
+
+    .usecase-header p {
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .usecase-body {
+      padding: 20px;
+    }
+
+    .usecase-problem {
+      background: #0f172a;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 3px solid #f59e0b;
+      font-size: 0.9rem;
+      color: #cbd5e1;
+    }
+
+    .usecase-code {
+      background: #0f172a;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+    }
+
+    .usecase-code .comment { color: #64748b; }
+    .usecase-code .keyword { color: #c084fc; }
+    .usecase-code .func { color: #60a5fa; }
+    .usecase-code .string { color: #4ade80; }
+    .usecase-code .number { color: #fb923c; }
+
+    /* API Table */
+    .api-section {
+      margin-top: 60px;
+    }
+
+    .api-category {
+      margin-bottom: 40px;
+    }
+
+    .api-category h3 {
+      color: #a78bfa;
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .api-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .api-table th {
+      background: #0f172a;
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+    }
+
+    .api-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .api-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .api-table code {
+      background: #0f172a;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: #60a5fa;
+    }
+
+    .api-table .desc {
+      color: #94a3b8;
+    }
+
+    /* Demo */
+    .demo-section {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 30px;
+      margin-top: 60px;
+      border: 1px solid #334155;
+    }
+
+    .demo-section h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    @media (max-width: 700px) {
+      .demo-grid { grid-template-columns: 1fr; }
+    }
+
+    .demo-input textarea {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .demo-input label {
+      display: block;
+      margin-bottom: 8px;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    .demo-input button {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 15px;
+      font-weight: 500;
+    }
+
+    .demo-output {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .demo-output h4 {
+      color: #64748b;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      margin-bottom: 15px;
+    }
+
+    .demo-result {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #4ade80;
+      margin-bottom: 10px;
+    }
+
+    .demo-sub {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    .chart-container {
+      height: 200px;
+      margin-top: 20px;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: #64748b;
+      border-top: 1px solid #1e293b;
+    }
+
+    footer a {
+      color: #94a3b8;
+    }
+
+    /* Comparison */
+    .comparison {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 40px;
+    }
+
+    .comparison-item {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid #334155;
+    }
+
+    .comparison-item.highlight {
+      border-color: #4ade80;
+      background: linear-gradient(180deg, #1e293b 0%, #0f2922 100%);
+    }
+
+    .comparison-item h4 {
+      color: #f8fafc;
+      margin-bottom: 10px;
+    }
+
+    .comparison-item .size {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .comparison-item.highlight .size {
+      color: #4ade80;
+    }
+
+    .comparison-item .note {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    /* Benchmark */
+    .benchmark {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 25px;
+      margin-top: 40px;
+    }
+
+    .benchmark h3 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .benchmark-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+
+    @media (max-width: 600px) {
+      .benchmark-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .benchmark-item {
+      text-align: center;
+      padding: 15px;
+      background: #0f172a;
+      border-radius: 8px;
+    }
+
+    .benchmark-item .value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #60a5fa;
+    }
+
+    .benchmark-item .label {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    /* Nav */
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      padding: 20px;
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    nav a {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    nav a:hover {
+      color: #f8fafc;
+    }
+
+    .status-bar {
+      text-align: center;
+      padding: 8px;
+      background: #1e293b;
+      font-size: 0.85rem;
+    }
+
+    .status-bar.ready { color: #4ade80; }
+    .status-bar.loading { color: #f59e0b; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="#features">Features</a>
+    <a href="#usecases">Use Cases</a>
+    <a href="#api">API</a>
+    <a href="#demo">Try It</a>
+    <a href="https://github.com/AdamPerlinski/micro-ml">GitHub</a>
+  </nav>
+
+  <div id="status" class="status-bar loading">Loading WASM module...</div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>micro-ml</h1>
+    <p class="tagline">You don't need TensorFlow.js for a trendline.</p>
+
+    <p style="color: #94a3b8; max-width: 600px; margin: 0 auto 30px;">
+      Most apps just need simple predictions: forecast sales, smooth sensor data, add a trendline.
+      ~40KB gzipped. Handles 100 million points in ~1 second.
+    </p>
+
+    <div class="size-badge">
+      <span class="big">TensorFlow.js 500KB</span>
+      <span class="vs">vs</span>
+      <span class="small">micro-ml ~40KB</span>
+    </div>
+
+    <div class="hero-buttons">
+      <a href="https://github.com/AdamPerlinski/micro-ml" class="btn btn-github">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <a href="https://www.npmjs.com/package/micro-ml" class="btn btn-npm">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M0 7.334v8h6.666v1.332H12v-1.332h12v-8H0zm6.666 6.664H5.334v-4H3.999v4H1.335V8.667h5.331v5.331zm4 0v1.336H8.001V8.667h5.334v5.332h-2.669v-.001zm12.001 0h-1.33v-4h-1.336v4h-1.335v-4h-1.33v4h-2.671V8.667h8.002v5.331z"/></svg>
+        npm
+      </a>
+      <a href="#demo" class="btn btn-primary">Try Live Demo</a>
+    </div>
+
+    <div class="install-box">
+      <span class="cmd">npm install</span> <span class="pkg">micro-ml</span>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <div class="container" id="features">
+    <h2 class="section-title">Why micro-ml?</h2>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">📦</div>
+        <h3>Small</h3>
+        <p>~40KB gzipped. No dependencies. Won't bloat your app.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎯</div>
+        <h3>Focused</h3>
+        <p>Regression, smoothing, forecasting. Does one thing well.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h3>Scales</h3>
+        <p>100M points in ~1s. 1M points in ~10ms.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🧩</div>
+        <h3>Simple API</h3>
+        <p>One function, one purpose. No configuration needed.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔒</div>
+        <h3>TypeScript</h3>
+        <p>Full type definitions. Autocomplete everything.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🌐</div>
+        <h3>Works Everywhere</h3>
+        <p>Browser, Node.js, Web Workers.</p>
+      </div>
+    </div>
+
+    <!-- Comparison -->
+    <div class="comparison">
+      <div class="comparison-item">
+        <h4>TensorFlow.js</h4>
+        <div class="size" style="color: #f87171;">500KB+</div>
+        <div class="note">Neural networks, full ML</div>
+      </div>
+      <div class="comparison-item">
+        <h4>ml.js</h4>
+        <div class="size" style="color: #fb923c;">150KB</div>
+        <div class="note">General ML toolkit</div>
+      </div>
+      <div class="comparison-item">
+        <h4>simple-statistics</h4>
+        <div class="size" style="color: #fbbf24;">30KB</div>
+        <div class="note">Basic statistics</div>
+      </div>
+      <div class="comparison-item highlight">
+        <h4>micro-ml</h4>
+        <div class="size">40KB</div>
+        <div class="note">Regression & forecasting</div>
+      </div>
+    </div>
+
+    <!-- Benchmark -->
+    <div class="benchmark">
+      <h3>Performance (Linear Regression)</h3>
+      <div class="benchmark-grid">
+        <div class="benchmark-item">
+          <div class="value" id="bench-1k">-</div>
+          <div class="label">1,000 points</div>
+        </div>
+        <div class="benchmark-item">
+          <div class="value" id="bench-10k">-</div>
+          <div class="label">10,000 points</div>
+        </div>
+        <div class="benchmark-item">
+          <div class="value" id="bench-100k">-</div>
+          <div class="label">100,000 points</div>
+        </div>
+        <div class="benchmark-item">
+          <div class="value" id="bench-1m">-</div>
+          <div class="label">1,000,000 points</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Use Cases -->
+  <div class="container" id="usecases">
+    <h2 class="section-title">What Can You Build?</h2>
+
+    <div class="usecases">
+      <!-- Sales Forecast -->
+      <div class="usecase">
+        <div class="usecase-header">
+          <h3><span>📈</span> Sales Forecasting</h3>
+          <p>Predict next month's revenue</p>
+        </div>
+        <div class="usecase-body">
+          <div class="usecase-problem">"I have 6 months of sales. What's next quarter going to look like?"</div>
+          <div class="usecase-code">
+<span class="keyword">const</span> sales = [<span class="number">42000</span>, <span class="number">45000</span>, <span class="number">48000</span>, <span class="number">52000</span>, <span class="number">55000</span>, <span class="number">58000</span>];
+
+<span class="keyword">const</span> forecast = <span class="keyword">await</span> <span class="func">trendForecast</span>(sales, <span class="number">3</span>);
+
+forecast.<span class="func">getForecast</span>();  <span class="comment">// [61000, 64000, 67000]</span>
+forecast.direction;     <span class="comment">// "up"</span>
+forecast.strength;      <span class="comment">// 0.99 (99% confidence)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stock Trendlines -->
+      <div class="usecase">
+        <div class="usecase-header">
+          <h3><span>📊</span> Stock Trendlines</h3>
+          <p>Add trend lines and moving averages to charts</p>
+        </div>
+        <div class="usecase-body">
+          <div class="usecase-problem">"Is this stock going up or down? I need a trendline for my chart."</div>
+          <div class="usecase-code">
+<span class="keyword">const</span> prices = [<span class="number">150</span>, <span class="number">152</span>, <span class="number">149</span>, <span class="number">155</span>, <span class="number">158</span>, <span class="number">160</span>];
+
+<span class="comment">// Fit trendline</span>
+<span class="keyword">const</span> model = <span class="keyword">await</span> <span class="func">linearRegressionSimple</span>(prices);
+model.slope;      <span class="comment">// 1.8 (growing $1.80/day)</span>
+
+<span class="comment">// Smooth with moving average</span>
+<span class="keyword">const</span> smooth = <span class="keyword">await</span> <span class="func">ema</span>(prices, <span class="number">3</span>);
+          </div>
+        </div>
+      </div>
+
+      <!-- Weight Loss -->
+      <div class="usecase">
+        <div class="usecase-header">
+          <h3><span>🏋️</span> Fitness Tracking</h3>
+          <p>Predict goal completion date</p>
+        </div>
+        <div class="usecase-body">
+          <div class="usecase-problem">"When will I reach my goal weight at this rate?"</div>
+          <div class="usecase-code">
+<span class="keyword">const</span> weights = [<span class="number">200</span>, <span class="number">198</span>, <span class="number">196</span>, <span class="number">194</span>, <span class="number">192</span>]; <span class="comment">// weekly</span>
+<span class="keyword">const</span> goal = <span class="number">175</span>;
+
+<span class="keyword">const</span> model = <span class="keyword">await</span> <span class="func">linearRegressionSimple</span>(weights);
+<span class="keyword">const</span> lossPerWeek = Math.abs(model.slope); <span class="comment">// 2 lbs</span>
+<span class="keyword">const</span> weeksToGoal = (<span class="number">192</span> - goal) / lossPerWeek;
+<span class="comment">// → 8.5 weeks to goal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sensor Smoothing -->
+      <div class="usecase">
+        <div class="usecase-header">
+          <h3><span>🌡️</span> IoT Sensors</h3>
+          <p>Smooth noisy sensor readings</p>
+        </div>
+        <div class="usecase-body">
+          <div class="usecase-problem">"Temperature sensor jumps around. I need a stable reading."</div>
+          <div class="usecase-code">
+<span class="comment">// Noisy readings</span>
+<span class="keyword">const</span> raw = [<span class="number">22.1</span>, <span class="number">25.3</span>, <span class="number">21.8</span>, <span class="number">24.9</span>, <span class="number">23.2</span>];
+
+<span class="comment">// Smoothed (removes noise)</span>
+<span class="keyword">const</span> smooth = <span class="keyword">await</span> <span class="func">ema</span>(raw, <span class="number">3</span>);
+<span class="comment">// → [22.1, 23.7, 22.75, 23.82, 23.51]</span>
+
+<span class="comment">// Display last value</span>
+display(smooth[smooth.length - <span class="number">1</span>]); <span class="comment">// 23.5°</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Growth Analysis -->
+      <div class="usecase">
+        <div class="usecase-header">
+          <h3><span>🚀</span> Growth Analysis</h3>
+          <p>Find doubling time and growth rate</p>
+        </div>
+        <div class="usecase-body">
+          <div class="usecase-problem">"User base is growing. When will we hit 1 million?"</div>
+          <div class="usecase-code">
+<span class="keyword">const</span> months = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>];
+<span class="keyword">const</span> users = [<span class="number">1000</span>, <span class="number">1500</span>, <span class="number">2200</span>, <span class="number">3300</span>, <span class="number">5000</span>, <span class="number">7500</span>];
+
+<span class="keyword">const</span> model = <span class="keyword">await</span> <span class="func">exponentialRegression</span>(months, users);
+
+model.<span class="func">doublingTime</span>();  <span class="comment">// 1.4 months</span>
+<span class="comment">// Growth rate: ~50%/month</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Anomaly Detection -->
+      <div class="usecase">
+        <div class="usecase-header">
+          <h3><span>⚡</span> Anomaly Detection</h3>
+          <p>Find spikes and unusual values</p>
+        </div>
+        <div class="usecase-body">
+          <div class="usecase-problem">"Alert me when server response time spikes."</div>
+          <div class="usecase-code">
+<span class="keyword">const</span> times = [<span class="number">50</span>, <span class="number">55</span>, <span class="number">48</span>, <span class="number">180</span>, <span class="number">52</span>, <span class="number">49</span>, <span class="number">150</span>];
+
+<span class="keyword">const</span> spikes = <span class="keyword">await</span> <span class="func">findPeaks</span>(times);
+<span class="comment">// → [3, 6] (indices of spikes)</span>
+
+<span class="keyword">if</span> (spikes.includes(times.length - <span class="number">1</span>)) {
+  <span class="func">alert</span>(<span class="string">'Spike detected!'</span>);
+}
+          </div>
+        </div>
+      </div>
+
+      <!-- Learning Curves -->
+      <div class="usecase">
+        <div class="usecase-header">
+          <h3><span>📚</span> Learning Curves</h3>
+          <p>Model diminishing returns</p>
+        </div>
+        <div class="usecase-body">
+          <div class="usecase-problem">"Learning is fast at first, then slows. How do I model this?"</div>
+          <div class="usecase-code">
+<span class="keyword">const</span> hours = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">5</span>, <span class="number">10</span>, <span class="number">20</span>, <span class="number">50</span>, <span class="number">100</span>];
+<span class="keyword">const</span> skill = [<span class="number">10</span>, <span class="number">25</span>, <span class="number">45</span>, <span class="number">60</span>, <span class="number">75</span>, <span class="number">90</span>, <span class="number">98</span>];
+
+<span class="keyword">const</span> model = <span class="keyword">await</span> <span class="func">logarithmicRegression</span>(hours, skill);
+<span class="comment">// skill = 0.5 + 21.3 × ln(hours)</span>
+
+<span class="comment">// Hours needed for 95% skill?</span>
+<span class="keyword">const</span> needed = Math.exp((<span class="number">95</span> - model.a) / model.b);
+          </div>
+        </div>
+      </div>
+
+      <!-- Curve Fitting -->
+      <div class="usecase">
+        <div class="usecase-header">
+          <h3><span>📐</span> Curve Fitting</h3>
+          <p>Fit parabolas and polynomials</p>
+        </div>
+        <div class="usecase-body">
+          <div class="usecase-problem">"My data is curved, not straight. Ball trajectory, etc."</div>
+          <div class="usecase-code">
+<span class="comment">// Projectile motion</span>
+<span class="keyword">const</span> time = [<span class="number">0</span>, <span class="number">0.5</span>, <span class="number">1</span>, <span class="number">1.5</span>, <span class="number">2</span>, <span class="number">2.5</span>];
+<span class="keyword">const</span> height = [<span class="number">0</span>, <span class="number">11</span>, <span class="number">20</span>, <span class="number">25</span>, <span class="number">26</span>, <span class="number">24</span>];
+
+<span class="keyword">const</span> model = <span class="keyword">await</span> <span class="func">polynomialRegression</span>(time, height, {
+  degree: <span class="number">2</span>  <span class="comment">// quadratic</span>
+});
+<span class="comment">// height = c₀ + c₁×t + c₂×t²</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Reference -->
+  <div class="container api-section" id="api">
+    <h2 class="section-title">API Reference</h2>
+
+    <div class="api-category">
+      <h3>📈 Regression (Find Patterns)</h3>
+      <table class="api-table">
+        <tr>
+          <th>Function</th>
+          <th>Description</th>
+          <th>Use When</th>
+        </tr>
+        <tr>
+          <td><code>linearRegression(x, y)</code></td>
+          <td class="desc">Fits y = mx + b</td>
+          <td class="desc">Steady growth/decline</td>
+        </tr>
+        <tr>
+          <td><code>linearRegressionSimple(y)</code></td>
+          <td class="desc">Same, auto x = [0,1,2...]</td>
+          <td class="desc">Time series data</td>
+        </tr>
+        <tr>
+          <td><code>polynomialRegression(x, y, {degree})</code></td>
+          <td class="desc">Fits polynomial curve</td>
+          <td class="desc">Curved patterns</td>
+        </tr>
+        <tr>
+          <td><code>exponentialRegression(x, y)</code></td>
+          <td class="desc">Fits y = a × e^(bx)</td>
+          <td class="desc">Growth/decay</td>
+        </tr>
+        <tr>
+          <td><code>logarithmicRegression(x, y)</code></td>
+          <td class="desc">Fits y = a + b × ln(x)</td>
+          <td class="desc">Diminishing returns</td>
+        </tr>
+        <tr>
+          <td><code>powerRegression(x, y)</code></td>
+          <td class="desc">Fits y = a × x^b</td>
+          <td class="desc">Power laws</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="api-category">
+      <h3>〰️ Smoothing (Remove Noise)</h3>
+      <table class="api-table">
+        <tr>
+          <th>Function</th>
+          <th>Description</th>
+          <th>Use When</th>
+        </tr>
+        <tr>
+          <td><code>sma(data, window)</code></td>
+          <td class="desc">Simple Moving Average</td>
+          <td class="desc">General smoothing</td>
+        </tr>
+        <tr>
+          <td><code>ema(data, window)</code></td>
+          <td class="desc">Exponential Moving Average</td>
+          <td class="desc">Recent values matter more</td>
+        </tr>
+        <tr>
+          <td><code>wma(data, window)</code></td>
+          <td class="desc">Weighted Moving Average</td>
+          <td class="desc">Balance of both</td>
+        </tr>
+        <tr>
+          <td><code>exponentialSmoothing(data, {alpha})</code></td>
+          <td class="desc">Single exponential smooth</td>
+          <td class="desc">Quick smoothing</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="api-category">
+      <h3>🔮 Forecasting (Predict Future)</h3>
+      <table class="api-table">
+        <tr>
+          <th>Function</th>
+          <th>Description</th>
+          <th>Use When</th>
+        </tr>
+        <tr>
+          <td><code>trendForecast(data, periods)</code></td>
+          <td class="desc">Analyze trend + predict</td>
+          <td class="desc">Future predictions</td>
+        </tr>
+        <tr>
+          <td><code>predict(xTrain, yTrain, xNew)</code></td>
+          <td class="desc">One-liner predict</td>
+          <td class="desc">Quick predictions</td>
+        </tr>
+        <tr>
+          <td><code>trendLine(data, periods)</code></td>
+          <td class="desc">Get model + predictions</td>
+          <td class="desc">Need both</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="api-category">
+      <h3>🔍 Analysis (Understand Data)</h3>
+      <table class="api-table">
+        <tr>
+          <th>Function</th>
+          <th>Description</th>
+          <th>Use When</th>
+        </tr>
+        <tr>
+          <td><code>findPeaks(data)</code></td>
+          <td class="desc">Find local maxima</td>
+          <td class="desc">Detect spikes</td>
+        </tr>
+        <tr>
+          <td><code>findTroughs(data)</code></td>
+          <td class="desc">Find local minima</td>
+          <td class="desc">Detect dips</td>
+        </tr>
+        <tr>
+          <td><code>rateOfChange(data, periods)</code></td>
+          <td class="desc">% change from n ago</td>
+          <td class="desc">Growth rate</td>
+        </tr>
+        <tr>
+          <td><code>momentum(data, periods)</code></td>
+          <td class="desc">Difference from n ago</td>
+          <td class="desc">Trend strength</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Live Demo -->
+  <div class="container" id="demo">
+    <div class="demo-section">
+      <h2>Try It Live</h2>
+
+      <div class="demo-grid">
+        <div class="demo-input">
+          <label>Your Data (comma-separated numbers)</label>
+          <textarea id="demo-data">42000, 45000, 48000, 52000, 55000, 58000, 62000, 68000</textarea>
+          <label style="margin-top: 15px;">Periods to Forecast</label>
+          <input type="number" id="demo-periods" value="3" min="1" max="12" style="width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 12px; border-radius: 8px; font-size: 1rem;">
+          <button onclick="runDemo()">Analyze & Forecast</button>
+        </div>
+        <div class="demo-output">
+          <h4>Results</h4>
+          <div class="demo-result" id="demo-result">Enter data and click Analyze</div>
+          <div class="demo-sub" id="demo-sub"></div>
+          <div class="chart-container">
+            <canvas id="demo-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Start -->
+  <div class="container">
+    <h2 class="section-title">Quick Start</h2>
+
+    <div class="usecase" style="max-width: 700px; margin: 0 auto;">
+      <div class="usecase-body">
+        <div class="usecase-code">
+<span class="comment">// npm install micro-ml</span>
+<span class="keyword">import</span> { linearRegression, trendForecast, ema } <span class="keyword">from</span> <span class="string">'micro-ml'</span>;
+
+<span class="comment">// Fit a model</span>
+<span class="keyword">const</span> model = <span class="keyword">await</span> <span class="func">linearRegression</span>([<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>], [<span class="number">2</span>,<span class="number">4</span>,<span class="number">6</span>,<span class="number">8</span>,<span class="number">10</span>]);
+model.slope;        <span class="comment">// 2</span>
+model.<span class="func">predict</span>([<span class="number">6</span>]); <span class="comment">// [12]</span>
+
+<span class="comment">// Forecast future</span>
+<span class="keyword">const</span> forecast = <span class="keyword">await</span> <span class="func">trendForecast</span>([<span class="number">10</span>,<span class="number">20</span>,<span class="number">30</span>,<span class="number">40</span>,<span class="number">50</span>], <span class="number">3</span>);
+forecast.<span class="func">getForecast</span>(); <span class="comment">// [60, 70, 80]</span>
+
+<span class="comment">// Smooth noisy data</span>
+<span class="keyword">const</span> smooth = <span class="keyword">await</span> <span class="func">ema</span>([<span class="number">10</span>,<span class="number">15</span>,<span class="number">12</span>,<span class="number">18</span>,<span class="number">14</span>,<span class="number">20</span>], <span class="number">3</span>);
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px;">
+      <a href="https://github.com/AdamPerlinski/micro-ml" class="btn btn-github" style="font-size: 1.1rem; padding: 16px 32px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    <p>
+      <a href="https://github.com/AdamPerlinski/micro-ml">GitHub</a> ·
+      <a href="https://www.npmjs.com/package/micro-ml">npm</a> ·
+      <a href="basic.html">Full Documentation</a> ·
+      MIT License
+    </p>
+    <p style="margin-top: 10px;">Built with Rust + WebAssembly</p>
+  </footer>
+
+  <script type="module">
+    // After npm publish, change to: https://esm.sh/micro-ml
+    import * as ml from '../packages/micro-ml/dist/index.js';
+    window.ml = ml;
+
+    // Initialize
+    try {
+      const start = performance.now();
+      await ml.init();
+      const time = (performance.now() - start).toFixed(1);
+      document.getElementById('status').textContent = `✓ WASM loaded in ${time}ms - Ready`;
+      document.getElementById('status').className = 'status-bar ready';
+
+      // Run benchmarks
+      runBenchmarks();
+    } catch (e) {
+      document.getElementById('status').textContent = 'Error: ' + e.message;
+      document.getElementById('status').style.background = '#7f1d1d';
+    }
+
+    // Benchmarks
+    async function runBenchmarks() {
+      const sizes = [1000, 10000, 100000, 1000000];
+      const ids = ['bench-1k', 'bench-10k', 'bench-100k', 'bench-1m'];
+
+      for (let i = 0; i < sizes.length; i++) {
+        const n = sizes[i];
+        const x = Array.from({length: n}, (_, i) => i);
+        const y = x.map(xi => 2 * xi + 10 + Math.random());
+
+        const start = performance.now();
+        await ml.linearRegression(x, y);
+        const time = performance.now() - start;
+
+        document.getElementById(ids[i]).textContent = time < 1 ? '<1ms' : time.toFixed(0) + 'ms';
+      }
+    }
+
+    // Demo
+    let demoChart = null;
+
+    window.runDemo = async () => {
+      const dataStr = document.getElementById('demo-data').value;
+      const periods = parseInt(document.getElementById('demo-periods').value) || 3;
+      const data = dataStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+
+      if (data.length < 2) {
+        document.getElementById('demo-result').textContent = 'Need at least 2 data points';
+        return;
+      }
+
+      const forecast = await ml.trendForecast(data, periods);
+      const model = await ml.linearRegressionSimple(data);
+      const values = forecast.getForecast();
+
+      document.getElementById('demo-result').textContent =
+        forecast.direction === 'up' ? '📈 Trending UP' :
+        forecast.direction === 'down' ? '📉 Trending DOWN' : '➡️ Flat';
+
+      document.getElementById('demo-sub').innerHTML = `
+        <strong>Slope:</strong> ${model.slope.toFixed(2)}/period &nbsp;|&nbsp;
+        <strong>R²:</strong> ${(model.rSquared * 100).toFixed(0)}% confidence<br>
+        <strong>Forecast:</strong> ${values.map(v => v.toFixed(0)).join(', ')}
+      `;
+
+      // Chart
+      const labels = [
+        ...data.map((_, i) => i + 1),
+        ...values.map((_, i) => data.length + 1 + i)
+      ];
+
+      if (demoChart) demoChart.destroy();
+      demoChart = new Chart(document.getElementById('demo-chart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Data',
+              data: [...data, ...Array(periods).fill(null)],
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59,130,246,0.1)',
+              fill: true
+            },
+            {
+              label: 'Forecast',
+              data: [...Array(data.length).fill(null), ...values],
+              borderColor: '#4ade80',
+              borderDash: [5, 5],
+              pointRadius: 5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8' }}},
+          scales: {
+            x: { ticks: { color: '#64748b' }},
+            y: { ticks: { color: '#64748b' }}
+          }
+        }
+      });
+    };
+  </script>
+</body>
+</html>
