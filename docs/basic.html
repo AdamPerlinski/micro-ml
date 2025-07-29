@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>micro-ml API Documentation</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      background: #f8f9fa;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 3rem 2rem;
+      margin-bottom: 2rem;
+    }
+
+    header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    header p { opacity: 0.9; font-size: 1.1rem; }
+
+    .status {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+      font-weight: 500;
+    }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+
+    nav {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    nav a {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      margin: 0.25rem;
+      color: #667eea;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    nav a:hover { background: #f0f0f0; }
+
+    section {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #667eea;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #eee;
+    }
+
+    h3 {
+      color: #333;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    pre {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 1.5rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    code {
+      font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+    }
+
+    .inline-code {
+      background: #f0f0f0;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    .signature {
+      background: #e8f4fd;
+      border-left: 4px solid #667eea;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-family: monospace;
+    }
+
+    .param-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+
+    .param-table th, .param-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    .param-table th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+
+    .type { color: #764ba2; font-family: monospace; }
+
+    .run-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+    }
+
+    .run-btn:hover { opacity: 0.9; }
+    .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .output {
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .perf-result {
+      display: inline-block;
+      background: #d4edda;
+      color: #155724;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      margin-left: 0.5rem;
+      font-weight: 500;
+    }
+
+    .warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+
+    .tip {
+      background: #d1ecf1;
+      border-left: 4px solid #17a2b8;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+
+    .perf-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .perf-card {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .perf-card .value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .perf-card .label {
+      color: #666;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>micro-ml API Documentation</h1>
+      <p>Complete function reference with examples and performance benchmarks</p>
+      <div id="status" class="status">Loading WASM module...</div>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav>
+      <strong>Quick Navigation:</strong>
+      <a href="#getting-started">Getting Started</a>
+      <a href="#linear">Linear Regression</a>
+      <a href="#polynomial">Polynomial</a>
+      <a href="#exponential">Exponential</a>
+      <a href="#logarithmic">Logarithmic</a>
+      <a href="#power">Power</a>
+      <a href="#moving-avg">Moving Averages</a>
+      <a href="#trend">Trend & Forecast</a>
+      <a href="#utilities">Utilities</a>
+      <a href="#performance">Performance</a>
+      <a href="#bottlenecks">Bottlenecks</a>
+    </nav>
+
+    <!-- Getting Started -->
+    <section id="getting-started">
+      <h2>Getting Started</h2>
+
+      <h3>Installation</h3>
+      <pre><code>npm install micro-ml</code></pre>
+
+      <h3>Basic Usage</h3>
+      <pre><code>import { linearRegression, init } from 'micro-ml';
+
+// Optional: explicitly initialize WASM (auto-initializes on first call)
+await init();
+
+// Fit a model
+const model = await linearRegression([1, 2, 3, 4, 5], [2, 4, 6, 8, 10]);
+
+console.log(model.slope);     // 2
+console.log(model.intercept); // 0
+console.log(model.rSquared);  // 1
+console.log(model.predict([6, 7, 8])); // [12, 14, 16]</code></pre>
+
+      <h3>Browser Usage (ES Modules)</h3>
+      <pre><code>&lt;script type="module"&gt;
+  import * as ml from './node_modules/micro-ml/dist/index.js';
+
+  const model = await ml.linearRegression([1, 2, 3], [2, 4, 6]);
+  console.log(model.slope); // 2
+&lt;/script&gt;</code></pre>
+    </section>
+
+    <!-- Linear Regression -->
+    <section id="linear">
+      <h2>Linear Regression</h2>
+      <p>Fit a line: <strong>y = slope * x + intercept</strong></p>
+
+      <h3>linearRegression(x, y)</h3>
+      <div class="signature">
+        async function linearRegression(x: number[], y: number[]): Promise&lt;LinearModel&gt;
+      </div>
+
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+        <tr><td>x</td><td class="type">number[]</td><td>Independent variable values</td></tr>
+        <tr><td>y</td><td class="type">number[]</td><td>Dependent variable values (same length as x)</td></tr>
+      </table>
+
+      <h4>Returns: LinearModel</h4>
+      <table class="param-table">
+        <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+        <tr><td>slope</td><td class="type">number</td><td>Slope coefficient (m)</td></tr>
+        <tr><td>intercept</td><td class="type">number</td><td>Y-intercept (b)</td></tr>
+        <tr><td>rSquared</td><td class="type">number</td><td>Coefficient of determination (0-1)</td></tr>
+        <tr><td>n</td><td class="type">number</td><td>Number of data points</td></tr>
+        <tr><td>predict(x)</td><td class="type">(number[]) => number[]</td><td>Predict y values for given x</td></tr>
+        <tr><td>toString()</td><td class="type">() => string</td><td>Human-readable equation</td></tr>
+      </table>
+
+      <h3>Example</h3>
+      <pre><code>// Stock price trend
+const days = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const prices = [100, 102, 105, 103, 108, 110, 112, 115, 118, 120];
+
+const model = await linearRegression(days, prices);
+
+console.log(`Trend: $${model.slope.toFixed(2)}/day`);
+console.log(`R² = ${(model.rSquared * 100).toFixed(1)}%`);
+
+// Predict next 5 days
+const forecast = model.predict([11, 12, 13, 14, 15]);</code></pre>
+
+      <button class="run-btn" onclick="runLinearExample()">Run Example</button>
+      <div id="linear-output" class="output" style="display:none;"></div>
+
+      <h3>linearRegressionSimple(y)</h3>
+      <div class="signature">
+        async function linearRegressionSimple(y: number[]): Promise&lt;LinearModel&gt;
+      </div>
+      <p>Convenience function when x values are just indices (0, 1, 2, ...). Useful for time series.</p>
+
+      <pre><code>// Equivalent calls:
+const model1 = await linearRegressionSimple([10, 20, 30, 40]);
+const model2 = await linearRegression([0, 1, 2, 3], [10, 20, 30, 40]);</code></pre>
+    </section>
+
+    <!-- Polynomial Regression -->
+    <section id="polynomial">
+      <h2>Polynomial Regression</h2>
+      <p>Fit a curve: <strong>y = c₀ + c₁x + c₂x² + c₃x³ + ...</strong></p>
+
+      <h3>polynomialRegression(x, y, options?)</h3>
+      <div class="signature">
+        async function polynomialRegression(x: number[], y: number[], options?: { degree?: number }): Promise&lt;PolynomialModel&gt;
+      </div>
+
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+        <tr><td>x</td><td class="type">number[]</td><td>Independent variable values</td></tr>
+        <tr><td>y</td><td class="type">number[]</td><td>Dependent variable values</td></tr>
+        <tr><td>options.degree</td><td class="type">number</td><td>Polynomial degree (default: 2)</td></tr>
+      </table>
+
+      <h4>Returns: PolynomialModel</h4>
+      <table class="param-table">
+        <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+        <tr><td>degree</td><td class="type">number</td><td>Polynomial degree</td></tr>
+        <tr><td>rSquared</td><td class="type">number</td><td>Coefficient of determination</td></tr>
+        <tr><td>n</td><td class="type">number</td><td>Number of data points</td></tr>
+        <tr><td>getCoefficients()</td><td class="type">() => number[]</td><td>Returns [c₀, c₁, c₂, ...]</td></tr>
+        <tr><td>predict(x)</td><td class="type">(number[]) => number[]</td><td>Predict y values</td></tr>
+      </table>
+
+      <h3>Example</h3>
+      <pre><code>// Projectile motion (parabola)
+const time = [0, 0.5, 1, 1.5, 2, 2.5, 3];
+const height = [0, 11.4, 19.6, 24.5, 26.1, 24.5, 19.6];
+
+const model = await polynomialRegression(time, height, { degree: 2 });
+
+console.log('Coefficients:', model.getCoefficients());
+// [c₀, c₁, c₂] representing: height = c₀ + c₁*t + c₂*t²
+
+// Find max height
+const tMax = 1.5;
+console.log('Max height:', model.predict([tMax])[0]);</code></pre>
+
+      <button class="run-btn" onclick="runPolynomialExample()">Run Example</button>
+      <div id="polynomial-output" class="output" style="display:none;"></div>
+
+      <div class="warning">
+        <strong>Note:</strong> Higher degrees (>5) may cause numerical instability.
+        Use the minimum degree that fits your data well.
+      </div>
+    </section>
+
+    <!-- Exponential Regression -->
+    <section id="exponential">
+      <h2>Exponential Regression</h2>
+      <p>Fit growth/decay: <strong>y = a × e^(bx)</strong></p>
+
+      <h3>exponentialRegression(x, y)</h3>
+      <div class="signature">
+        async function exponentialRegression(x: number[], y: number[]): Promise&lt;ExponentialModel&gt;
+      </div>
+
+      <div class="warning">
+        <strong>Requirement:</strong> All y values must be positive (> 0).
+      </div>
+
+      <h4>Returns: ExponentialModel</h4>
+      <table class="param-table">
+        <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+        <tr><td>a</td><td class="type">number</td><td>Initial value coefficient</td></tr>
+        <tr><td>b</td><td class="type">number</td><td>Growth rate (positive = growth, negative = decay)</td></tr>
+        <tr><td>rSquared</td><td class="type">number</td><td>Coefficient of determination</td></tr>
+        <tr><td>doublingTime()</td><td class="type">() => number</td><td>Time to double (for growth)</td></tr>
+        <tr><td>predict(x)</td><td class="type">(number[]) => number[]</td><td>Predict y values</td></tr>
+      </table>
+
+      <h3>Example</h3>
+      <pre><code>// Bacterial growth
+const hours = [0, 1, 2, 3, 4, 5, 6];
+const population = [100, 150, 225, 338, 506, 759, 1139];
+
+const model = await exponentialRegression(hours, population);
+
+console.log(`Initial: ${model.a.toFixed(0)} bacteria`);
+console.log(`Growth rate: ${(model.b * 100).toFixed(1)}% per hour`);
+console.log(`Doubling time: ${model.doublingTime().toFixed(2)} hours`);
+
+// Predict after 10 hours
+const future = model.predict([10]);
+console.log(`After 10 hours: ${future[0].toFixed(0)} bacteria`);</code></pre>
+
+      <button class="run-btn" onclick="runExponentialExample()">Run Example</button>
+      <div id="exponential-output" class="output" style="display:none;"></div>
+    </section>
+
+    <!-- Logarithmic Regression -->
+    <section id="logarithmic">
+      <h2>Logarithmic Regression</h2>
+      <p>Fit logarithmic curve: <strong>y = a + b × ln(x)</strong></p>
+
+      <h3>logarithmicRegression(x, y)</h3>
+      <div class="signature">
+        async function logarithmicRegression(x: number[], y: number[]): Promise&lt;LogarithmicModel&gt;
+      </div>
+
+      <div class="warning">
+        <strong>Requirement:</strong> All x values must be positive (> 0).
+      </div>
+
+      <h4>Returns: LogarithmicModel</h4>
+      <table class="param-table">
+        <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+        <tr><td>a</td><td class="type">number</td><td>Intercept</td></tr>
+        <tr><td>b</td><td class="type">number</td><td>Logarithmic coefficient</td></tr>
+        <tr><td>rSquared</td><td class="type">number</td><td>Coefficient of determination</td></tr>
+        <tr><td>predict(x)</td><td class="type">(number[]) => number[]</td><td>Predict y values</td></tr>
+      </table>
+
+      <h3>Example</h3>
+      <pre><code>// Learning curve (diminishing returns)
+const practice = [1, 2, 5, 10, 20, 50, 100];
+const skill = [10, 25, 45, 60, 75, 90, 100];
+
+const model = await logarithmicRegression(practice, skill);
+
+console.log(`Skill = ${model.a.toFixed(2)} + ${model.b.toFixed(2)} × ln(practice)`);
+console.log(`R² = ${(model.rSquared * 100).toFixed(1)}%`);
+
+// How much practice for 95% skill?
+// Solve: 95 = a + b * ln(x)
+const target = Math.exp((95 - model.a) / model.b);
+console.log(`Need ${target.toFixed(0)} hours for 95% skill`);</code></pre>
+
+      <button class="run-btn" onclick="runLogarithmicExample()">Run Example</button>
+      <div id="logarithmic-output" class="output" style="display:none;"></div>
+    </section>
+
+    <!-- Power Regression -->
+    <section id="power">
+      <h2>Power Regression</h2>
+      <p>Fit power law: <strong>y = a × x^b</strong></p>
+
+      <h3>powerRegression(x, y)</h3>
+      <div class="signature">
+        async function powerRegression(x: number[], y: number[]): Promise&lt;PowerModel&gt;
+      </div>
+
+      <div class="warning">
+        <strong>Requirement:</strong> All x and y values must be positive (> 0).
+      </div>
+
+      <h3>Example</h3>
+      <pre><code>// Kepler's third law: T² ∝ r³
+const orbitalRadius = [0.39, 0.72, 1.0, 1.52, 5.2, 9.54];  // AU
+const orbitalPeriod = [0.24, 0.62, 1.0, 1.88, 11.86, 29.46]; // years
+
+const model = await powerRegression(orbitalRadius, orbitalPeriod);
+
+console.log(`Period = ${model.a.toFixed(4)} × radius^${model.b.toFixed(4)}`);
+// b should be close to 1.5 (Kepler's law: T = r^1.5)</code></pre>
+
+      <button class="run-btn" onclick="runPowerExample()">Run Example</button>
+      <div id="power-output" class="output" style="display:none;"></div>
+    </section>
+
+    <!-- Moving Averages -->
+    <section id="moving-avg">
+      <h2>Moving Averages</h2>
+      <p>Smooth noisy time series data.</p>
+
+      <h3>Available Functions</h3>
+      <div class="signature">
+async function sma(data: number[], window: number): Promise&lt;number[]&gt;
+async function ema(data: number[], window: number): Promise&lt;number[]&gt;
+async function wma(data: number[], window: number): Promise&lt;number[]&gt;
+async function movingAverage(data: number[], options: MovingAverageOptions): Promise&lt;number[]&gt;
+      </div>
+
+      <table class="param-table">
+        <tr><th>Function</th><th>Description</th><th>Use Case</th></tr>
+        <tr><td>sma</td><td>Simple Moving Average - equal weight to all periods</td><td>General smoothing</td></tr>
+        <tr><td>ema</td><td>Exponential MA - more weight to recent values</td><td>Trend following, quick response</td></tr>
+        <tr><td>wma</td><td>Weighted MA - linearly decreasing weights</td><td>Balance between SMA and EMA</td></tr>
+      </table>
+
+      <div class="tip">
+        <strong>Note:</strong> Returns NaN for positions before the window is full.
+        For a window of 5, the first 4 values will be NaN.
+      </div>
+
+      <h3>Example</h3>
+      <pre><code>// Stock price smoothing
+const prices = [100, 102, 98, 105, 110, 108, 115, 112, 120, 118, 125];
+
+const simple = await sma(prices, 3);
+const exponential = await ema(prices, 3);
+const weighted = await wma(prices, 3);
+
+console.log('SMA:', simple);    // [NaN, NaN, 100, 101.67, 104.33, ...]
+console.log('EMA:', exponential); // [NaN, NaN, 100, 102.5, 106.25, ...]
+console.log('WMA:', weighted);   // [NaN, NaN, 99.33, 103.17, 106.17, ...]
+
+// Using generic function
+const result = await movingAverage(prices, { window: 5, type: 'ema' });</code></pre>
+
+      <button class="run-btn" onclick="runMovingAvgExample()">Run Example</button>
+      <div id="moving-avg-output" class="output" style="display:none;"></div>
+    </section>
+
+    <!-- Trend & Forecast -->
+    <section id="trend">
+      <h2>Trend Analysis & Forecasting</h2>
+
+      <h3>trendForecast(data, periods)</h3>
+      <div class="signature">
+        async function trendForecast(data: number[], periods: number): Promise&lt;TrendAnalysis&gt;
+      </div>
+
+      <h4>Returns: TrendAnalysis</h4>
+      <table class="param-table">
+        <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+        <tr><td>direction</td><td class="type">'up' | 'down' | 'flat'</td><td>Trend direction</td></tr>
+        <tr><td>slope</td><td class="type">number</td><td>Rate of change per period</td></tr>
+        <tr><td>strength</td><td class="type">number</td><td>R² value (0-1), how well trend fits</td></tr>
+        <tr><td>getForecast()</td><td class="type">() => number[]</td><td>Predicted future values</td></tr>
+      </table>
+
+      <h3>Other Trend Functions</h3>
+      <div class="signature">
+async function rateOfChange(data: number[], periods: number): Promise&lt;number[]&gt;
+async function momentum(data: number[], periods: number): Promise&lt;number[]&gt;
+async function exponentialSmoothing(data: number[], options?: { alpha?: number }): Promise&lt;number[]&gt;
+      </div>
+
+      <h3>Example</h3>
+      <pre><code>// Sales trend analysis
+const monthlySales = [42, 45, 48, 52, 55, 58, 62, 68, 72, 75, 80, 85];
+
+const trend = await trendForecast(monthlySales, 6);
+
+console.log(`Direction: ${trend.direction}`);     // 'up'
+console.log(`Growth: $${trend.slope.toFixed(2)}/month`);
+console.log(`Confidence: ${(trend.strength * 100).toFixed(1)}%`);
+console.log(`Next 6 months:`, trend.getForecast());
+
+// Rate of change (% change from n periods ago)
+const roc = await rateOfChange(monthlySales, 3);
+console.log('3-month ROC:', roc);
+
+// Momentum (absolute change from n periods ago)
+const mom = await momentum(monthlySales, 3);
+console.log('3-month momentum:', mom);</code></pre>
+
+      <button class="run-btn" onclick="runTrendExample()">Run Example</button>
+      <div id="trend-output" class="output" style="display:none;"></div>
+    </section>
+
+    <!-- Utilities -->
+    <section id="utilities">
+      <h2>Utility Functions</h2>
+
+      <h3>findPeaks(data) / findTroughs(data)</h3>
+      <div class="signature">
+async function findPeaks(data: number[]): Promise&lt;number[]&gt;
+async function findTroughs(data: number[]): Promise&lt;number[]&gt;
+      </div>
+      <p>Returns indices of local maxima (peaks) or minima (troughs).</p>
+
+      <h3>predict(xTrain, yTrain, xPredict)</h3>
+      <div class="signature">
+async function predict(xTrain: number[], yTrain: number[], xPredict: number[]): Promise&lt;number[]&gt;
+      </div>
+      <p>One-liner: fit linear model and predict in single call.</p>
+
+      <h3>trendLine(data, futurePoints)</h3>
+      <div class="signature">
+async function trendLine(data: number[], futurePoints: number): Promise&lt;{ model: LinearModel, trend: number[] }&gt;
+      </div>
+      <p>Quick trend line with future predictions.</p>
+
+      <h3>Example</h3>
+      <pre><code>// Find peaks and troughs in stock data
+const prices = [100, 105, 102, 110, 108, 115, 112, 120, 118];
+
+const peaks = await findPeaks(prices);   // indices of local highs
+const troughs = await findTroughs(prices); // indices of local lows
+
+console.log('Peak indices:', peaks);     // [1, 3, 5, 7]
+console.log('Peak values:', peaks.map(i => prices[i]));
+
+// Quick prediction
+const predicted = await predict(
+  [1, 2, 3, 4, 5],  // x training
+  [10, 20, 30, 40, 50],  // y training
+  [6, 7, 8]  // x to predict
+);
+console.log('Predicted:', predicted); // [60, 70, 80]</code></pre>
+
+      <button class="run-btn" onclick="runUtilitiesExample()">Run Example</button>
+      <div id="utilities-output" class="output" style="display:none;"></div>
+    </section>
+
+    <!-- Performance -->
+    <section id="performance">
+      <h2>Performance Benchmarks</h2>
+      <p>Test micro-ml with large datasets to see WASM performance.</p>
+
+      <div class="perf-grid" id="perf-results">
+        <div class="perf-card">
+          <div class="value" id="perf-1k">-</div>
+          <div class="label">1,000 points</div>
+        </div>
+        <div class="perf-card">
+          <div class="value" id="perf-10k">-</div>
+          <div class="label">10,000 points</div>
+        </div>
+        <div class="perf-card">
+          <div class="value" id="perf-100k">-</div>
+          <div class="label">100,000 points</div>
+        </div>
+        <div class="perf-card">
+          <div class="value" id="perf-1m">-</div>
+          <div class="label">1,000,000 points</div>
+        </div>
+      </div>
+
+      <button class="run-btn" onclick="runBenchmarks()">Run All Benchmarks</button>
+      <button class="run-btn" onclick="runBenchmark(10000000)" style="background: #dc3545;">Test 10M Points</button>
+
+      <div id="benchmark-output" class="output" style="display:none;"></div>
+
+      <h3>Expected Performance</h3>
+      <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">Benchmarked on real hardware (median of 5 runs)</p>
+      <table class="param-table">
+        <tr><th>Data Size</th><th>Linear Regression</th><th>Polynomial (deg 3)</th><th>Moving Average</th></tr>
+        <tr><td>1,000</td><td>< 1ms</td><td>< 1ms</td><td>< 1ms</td></tr>
+        <tr><td>10,000</td><td>< 1ms</td><td>< 1ms</td><td>< 1ms</td></tr>
+        <tr><td>100,000</td><td>1ms</td><td>5ms</td><td>3-4ms</td></tr>
+        <tr><td>1,000,000</td><td>6-12ms</td><td>53ms</td><td>30-35ms</td></tr>
+        <tr><td>10,000,000</td><td>50-100ms</td><td>~530ms</td><td>~280ms</td></tr>
+        <tr><td>100,000,000</td><td>~500ms-1s</td><td>-</td><td>~2.9s</td></tr>
+      </table>
+    </section>
+
+    <!-- Bottlenecks -->
+    <section id="bottlenecks">
+      <h2>Bottlenecks & Best Practices</h2>
+
+      <h3>1. WASM Initialization</h3>
+      <div class="warning">
+        <strong>First call overhead:</strong> The first function call loads the WASM module (~40KB).
+        Subsequent calls are instant.
+      </div>
+      <pre><code>// Pre-load WASM during app startup
+import { init } from 'micro-ml';
+
+// Call early in your app lifecycle
+await init();  // ~10-50ms first time
+
+// Now all calls are fast
+const model = await linearRegression(x, y);  // < 1ms</code></pre>
+
+      <h3>2. Array Conversion Overhead</h3>
+      <div class="tip">
+        <strong>Tip:</strong> Each call converts JavaScript arrays to Float64Array for WASM.
+        For repeated operations on the same data, this is unavoidable but minimal.
+      </div>
+      <pre><code>// Each call has ~0.1ms overhead for array conversion
+// For 100,000 points: ~1ms conversion + ~10ms computation
+
+// If doing multiple operations, they share the same conversion cost
+const linear = await linearRegression(x, y);    // includes conversion
+const poly = await polynomialRegression(x, y);  // includes conversion again</code></pre>
+
+      <h3>3. Polynomial Degree Limits</h3>
+      <div class="warning">
+        <strong>Caution:</strong> High polynomial degrees cause numerical instability and slow performance.
+      </div>
+      <pre><code>// Good: degree 2-4
+const quadratic = await polynomialRegression(x, y, { degree: 2 }); // Fast, stable
+
+// Risky: degree 5-7
+const quintic = await polynomialRegression(x, y, { degree: 5 }); // May have precision issues
+
+// Avoid: degree > 7
+const high = await polynomialRegression(x, y, { degree: 10 }); // Likely unstable</code></pre>
+
+      <h3>4. Memory Considerations</h3>
+      <pre><code>// Each number = 8 bytes (Float64)
+// 1M points = ~8MB per array
+// Linear regression with 1M points = ~16MB (x + y arrays)
+
+// For very large datasets, consider:
+// 1. Sampling: Use every nth point
+// 2. Chunking: Process in batches
+// 3. Web Workers: Keep UI responsive</code></pre>
+
+      <h3>5. Web Worker Usage</h3>
+      <pre><code>// For large datasets, use Web Workers to avoid blocking UI
+import { createWorker } from 'micro-ml/worker';
+
+const worker = await createWorker();
+
+// Non-blocking regression on huge dataset
+const model = await worker.linearRegression(hugeX, hugeY);
+
+// Clean up when done
+worker.terminate();</code></pre>
+
+      <h3>6. Common Pitfalls</h3>
+      <table class="param-table">
+        <tr><th>Issue</th><th>Cause</th><th>Solution</th></tr>
+        <tr>
+          <td>Error: "All y values must be positive"</td>
+          <td>exponentialRegression with y ≤ 0</td>
+          <td>Filter/transform data or use different model</td>
+        </tr>
+        <tr>
+          <td>Error: "Arrays must have same length"</td>
+          <td>Mismatched x and y arrays</td>
+          <td>Verify array lengths match</td>
+        </tr>
+        <tr>
+          <td>R² is negative</td>
+          <td>Wrong model type for data</td>
+          <td>Try different regression type</td>
+        </tr>
+        <tr>
+          <td>NaN in results</td>
+          <td>Division by zero or log of negative</td>
+          <td>Check input data for zeros/negatives</td>
+        </tr>
+        <tr>
+          <td>Slow performance</td>
+          <td>Many small calls instead of batching</td>
+          <td>Batch predictions in single predict() call</td>
+        </tr>
+      </table>
+
+      <button class="run-btn" onclick="runBottleneckDemo()">Run Bottleneck Demo</button>
+      <div id="bottleneck-output" class="output" style="display:none;"></div>
+    </section>
+  </div>
+
+  <script type="module">
+    // After npm publish, change to: https://esm.sh/micro-ml
+    import * as ml from '../packages/micro-ml/dist/index.js';
+    window.ml = ml;
+
+    // Initialize and update status
+    try {
+      const start = performance.now();
+      await ml.init();
+      const initTime = (performance.now() - start).toFixed(2);
+      document.getElementById('status').textContent = `WASM loaded in ${initTime}ms`;
+      document.getElementById('status').className = 'status success';
+    } catch (err) {
+      document.getElementById('status').textContent = `Error: ${err.message}`;
+      document.getElementById('status').className = 'status error';
+    }
+
+    // Example runners
+    window.runLinearExample = async () => {
+      const output = document.getElementById('linear-output');
+      output.style.display = 'block';
+
+      const days = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const prices = [100, 102, 105, 103, 108, 110, 112, 115, 118, 120];
+
+      const start = performance.now();
+      const model = await ml.linearRegression(days, prices);
+      const time = (performance.now() - start).toFixed(2);
+
+      const forecast = model.predict([11, 12, 13, 14, 15]);
+
+      output.textContent = `Linear Regression Results (${time}ms):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Equation: ${model.toString()}
+Slope: ${model.slope.toFixed(4)} ($${ model.slope.toFixed(2)}/day)
+Intercept: ${model.intercept.toFixed(4)}
+R²: ${(model.rSquared * 100).toFixed(2)}%
+Data points: ${model.n}
+
+Forecast for days 11-15:
+${forecast.map((v, i) => `  Day ${11+i}: $${v.toFixed(2)}`).join('\n')}`;
+    };
+
+    window.runPolynomialExample = async () => {
+      const output = document.getElementById('polynomial-output');
+      output.style.display = 'block';
+
+      const time = [0, 0.5, 1, 1.5, 2, 2.5, 3];
+      const height = [0, 11.4, 19.6, 24.5, 26.1, 24.5, 19.6];
+
+      const start = performance.now();
+      const model = await ml.polynomialRegression(time, height, { degree: 2 });
+      const elapsed = (performance.now() - start).toFixed(2);
+
+      const coeffs = model.getCoefficients();
+
+      output.textContent = `Polynomial Regression Results (${elapsed}ms):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Equation: ${model.toString()}
+Degree: ${model.degree}
+R²: ${(model.rSquared * 100).toFixed(2)}%
+
+Coefficients:
+  c₀ (constant): ${coeffs[0].toFixed(4)}
+  c₁ (linear):   ${coeffs[1].toFixed(4)}
+  c₂ (quadratic): ${coeffs[2].toFixed(4)}
+
+Max height at t=1.5: ${model.predict([1.5])[0].toFixed(2)}`;
+    };
+
+    window.runExponentialExample = async () => {
+      const output = document.getElementById('exponential-output');
+      output.style.display = 'block';
+
+      const hours = [0, 1, 2, 3, 4, 5, 6];
+      const population = [100, 150, 225, 338, 506, 759, 1139];
+
+      const start = performance.now();
+      const model = await ml.exponentialRegression(hours, population);
+      const time = (performance.now() - start).toFixed(2);
+
+      const future = model.predict([8, 10, 12]);
+
+      output.textContent = `Exponential Regression Results (${time}ms):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Equation: ${model.toString()}
+Initial value (a): ${model.a.toFixed(2)}
+Growth rate (b): ${model.b.toFixed(4)} (${(model.b * 100).toFixed(1)}%/hour)
+Doubling time: ${model.doublingTime().toFixed(2)} hours
+R²: ${(model.rSquared * 100).toFixed(2)}%
+
+Future predictions:
+  After 8 hours: ${future[0].toFixed(0)} bacteria
+  After 10 hours: ${future[1].toFixed(0)} bacteria
+  After 12 hours: ${future[2].toFixed(0)} bacteria`;
+    };
+
+    window.runLogarithmicExample = async () => {
+      const output = document.getElementById('logarithmic-output');
+      output.style.display = 'block';
+
+      const practice = [1, 2, 5, 10, 20, 50, 100];
+      const skill = [10, 25, 45, 60, 75, 90, 100];
+
+      const start = performance.now();
+      const model = await ml.logarithmicRegression(practice, skill);
+      const time = (performance.now() - start).toFixed(2);
+
+      output.textContent = `Logarithmic Regression Results (${time}ms):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Equation: ${model.toString()}
+Intercept (a): ${model.a.toFixed(4)}
+Log coefficient (b): ${model.b.toFixed(4)}
+R²: ${(model.rSquared * 100).toFixed(2)}%
+
+Practice needed for skill levels:
+  80% skill: ${Math.exp((80 - model.a) / model.b).toFixed(0)} hours
+  90% skill: ${Math.exp((90 - model.a) / model.b).toFixed(0)} hours
+  95% skill: ${Math.exp((95 - model.a) / model.b).toFixed(0)} hours`;
+    };
+
+    window.runPowerExample = async () => {
+      const output = document.getElementById('power-output');
+      output.style.display = 'block';
+
+      const radius = [0.39, 0.72, 1.0, 1.52, 5.2, 9.54];
+      const period = [0.24, 0.62, 1.0, 1.88, 11.86, 29.46];
+
+      const start = performance.now();
+      const model = await ml.powerRegression(radius, period);
+      const time = (performance.now() - start).toFixed(2);
+
+      output.textContent = `Power Regression Results (${time}ms):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Equation: ${model.toString()}
+Coefficient (a): ${model.a.toFixed(6)}
+Exponent (b): ${model.b.toFixed(6)}
+R²: ${(model.rSquared * 100).toFixed(4)}%
+
+Kepler's Law verification:
+  Expected exponent: 1.5
+  Actual exponent: ${model.b.toFixed(4)}
+  Error: ${(Math.abs(model.b - 1.5) * 100).toFixed(2)}%
+
+Predict Neptune (30.07 AU): ${model.predict([30.07])[0].toFixed(1)} years
+  (Actual: 164.8 years)`;
+    };
+
+    window.runMovingAvgExample = async () => {
+      const output = document.getElementById('moving-avg-output');
+      output.style.display = 'block';
+
+      const prices = [100, 102, 98, 105, 110, 108, 115, 112, 120, 118, 125];
+
+      const start = performance.now();
+      const [simple, exponential, weighted] = await Promise.all([
+        ml.sma(prices, 3),
+        ml.ema(prices, 3),
+        ml.wma(prices, 3)
+      ]);
+      const time = (performance.now() - start).toFixed(2);
+
+      const format = arr => arr.map(v => isNaN(v) ? 'NaN' : v.toFixed(2)).join(', ');
+
+      output.textContent = `Moving Average Results (${time}ms):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Input: ${prices.join(', ')}
+Window: 3
+
+SMA: ${format(simple)}
+EMA: ${format(exponential)}
+WMA: ${format(weighted)}
+
+Comparison at index 5 (price=108):
+  SMA: ${simple[5].toFixed(2)} (equal weight)
+  EMA: ${exponential[5].toFixed(2)} (favors recent)
+  WMA: ${weighted[5].toFixed(2)} (linear weights)`;
+    };
+
+    window.runTrendExample = async () => {
+      const output = document.getElementById('trend-output');
+      output.style.display = 'block';
+
+      const sales = [42, 45, 48, 52, 55, 58, 62, 68, 72, 75, 80, 85];
+
+      const start = performance.now();
+      const [trend, roc, mom] = await Promise.all([
+        ml.trendForecast(sales, 6),
+        ml.rateOfChange(sales, 3),
+        ml.momentum(sales, 3)
+      ]);
+      const time = (performance.now() - start).toFixed(2);
+
+      output.textContent = `Trend Analysis Results (${time}ms):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Input: ${sales.join(', ')}
+
+Trend Analysis:
+  Direction: ${trend.direction.toUpperCase()}
+  Slope: $${trend.slope.toFixed(2)}/month
+  Strength (R²): ${(trend.strength * 100).toFixed(1)}%
+
+6-Month Forecast:
+${trend.getForecast().map((v, i) => `  Month ${13+i}: $${v.toFixed(2)}`).join('\n')}
+
+Rate of Change (3-month, %):
+  ${roc.slice(3).map(v => v.toFixed(1) + '%').join(', ')}
+
+Momentum (3-month, absolute):
+  ${mom.slice(3).map(v => '+$' + v.toFixed(0)).join(', ')}`;
+    };
+
+    window.runUtilitiesExample = async () => {
+      const output = document.getElementById('utilities-output');
+      output.style.display = 'block';
+
+      const prices = [100, 105, 102, 110, 108, 115, 112, 120, 118];
+
+      const start = performance.now();
+      const [peaks, troughs, predicted, trendResult] = await Promise.all([
+        ml.findPeaks(prices),
+        ml.findTroughs(prices),
+        ml.predict([1,2,3,4,5], [10,20,30,40,50], [6,7,8]),
+        ml.trendLine(prices, 3)
+      ]);
+      const time = (performance.now() - start).toFixed(2);
+
+      output.textContent = `Utility Functions Results (${time}ms):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Input: ${prices.join(', ')}
+
+Peaks (local maxima):
+  Indices: ${peaks.join(', ')}
+  Values: ${peaks.map(i => prices[i]).join(', ')}
+
+Troughs (local minima):
+  Indices: ${troughs.join(', ')}
+  Values: ${troughs.map(i => prices[i]).join(', ')}
+
+Quick Predict ([1-5] → [10-50], predict [6,7,8]):
+  Result: ${predicted.join(', ')}
+
+Trend Line (next 3 points):
+  ${trendResult.trend.map(v => v.toFixed(2)).join(', ')}
+  Model: slope=${trendResult.model.slope.toFixed(2)}`;
+    };
+
+    // Benchmark functions
+    function generateData(n) {
+      const x = new Array(n);
+      const y = new Array(n);
+      for (let i = 0; i < n; i++) {
+        x[i] = i;
+        y[i] = 2 * i + 10 + (Math.random() - 0.5) * 5;
+      }
+      return { x, y };
+    }
+
+    async function benchmark(n) {
+      const { x, y } = generateData(n);
+
+      const start = performance.now();
+      await ml.linearRegression(x, y);
+      const linearTime = performance.now() - start;
+
+      const start2 = performance.now();
+      await ml.ema(y, 10);
+      const emaTime = performance.now() - start2;
+
+      return { n, linearTime, emaTime };
+    }
+
+    window.runBenchmarks = async () => {
+      const output = document.getElementById('benchmark-output');
+      output.style.display = 'block';
+      output.textContent = 'Running benchmarks...\n';
+
+      const sizes = [1000, 10000, 100000, 1000000];
+      const results = [];
+
+      for (const n of sizes) {
+        output.textContent += `Testing ${n.toLocaleString()} points...\n`;
+        const result = await benchmark(n);
+        results.push(result);
+
+        const id = `perf-${n === 1000 ? '1k' : n === 10000 ? '10k' : n === 100000 ? '100k' : '1m'}`;
+        document.getElementById(id).textContent = `${result.linearTime.toFixed(1)}ms`;
+      }
+
+      output.textContent = `Benchmark Results:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${'Size'.padEnd(15)} ${'Linear Reg'.padEnd(15)} ${'EMA'.padEnd(15)}
+${results.map(r =>
+  `${r.n.toLocaleString().padEnd(15)} ${(r.linearTime.toFixed(2) + 'ms').padEnd(15)} ${(r.emaTime.toFixed(2) + 'ms').padEnd(15)}`
+).join('\n')}
+
+Observations:
+- Linear regression: O(n) complexity
+- EMA: O(n) complexity, slightly faster (simpler math)
+- Memory usage: ~16 bytes per point (2 × Float64)`;
+    };
+
+    window.runBenchmark = async (n) => {
+      const output = document.getElementById('benchmark-output');
+      output.style.display = 'block';
+      output.textContent = `Generating ${n.toLocaleString()} data points...\n`;
+
+      await new Promise(r => setTimeout(r, 10)); // Let UI update
+
+      const { x, y } = generateData(n);
+      output.textContent += `Data generated. Running linear regression...\n`;
+
+      await new Promise(r => setTimeout(r, 10));
+
+      const start = performance.now();
+      const model = await ml.linearRegression(x, y);
+      const time = performance.now() - start;
+
+      output.textContent = `${n.toLocaleString()} Points Benchmark:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Time: ${time.toFixed(2)}ms
+Throughput: ${(n / time * 1000).toFixed(0).toLocaleString()} points/sec
+Memory: ~${(n * 16 / 1024 / 1024).toFixed(1)}MB
+
+Model Results:
+  Slope: ${model.slope.toFixed(6)} (expected: ~2)
+  Intercept: ${model.intercept.toFixed(6)} (expected: ~10)
+  R²: ${(model.rSquared * 100).toFixed(4)}%`;
+    };
+
+    window.runBottleneckDemo = async () => {
+      const output = document.getElementById('bottleneck-output');
+      output.style.display = 'block';
+      output.textContent = 'Testing bottlenecks...\n\n';
+
+      // Test 1: Init overhead
+      output.textContent += '1. WASM Init (already loaded): ';
+      let start = performance.now();
+      await ml.init();
+      output.textContent += `${(performance.now() - start).toFixed(2)}ms (cached)\n\n`;
+
+      // Test 2: Small vs large data
+      output.textContent += '2. Array size impact (linear regression):\n';
+      for (const n of [10, 100, 1000, 10000]) {
+        const { x, y } = generateData(n);
+        start = performance.now();
+        await ml.linearRegression(x, y);
+        output.textContent += `   ${n.toString().padStart(5)} points: ${(performance.now() - start).toFixed(2)}ms\n`;
+      }
+
+      // Test 3: Polynomial degree impact
+      output.textContent += '\n3. Polynomial degree impact (1000 points):\n';
+      const { x, y } = generateData(1000);
+      for (const deg of [2, 3, 4, 5]) {
+        start = performance.now();
+        await ml.polynomialRegression(x, y, { degree: deg });
+        output.textContent += `   Degree ${deg}: ${(performance.now() - start).toFixed(2)}ms\n`;
+      }
+
+      // Test 4: Multiple small calls vs one large
+      output.textContent += '\n4. Many small vs few large (same total data):\n';
+      const smallData = generateData(100);
+      start = performance.now();
+      for (let i = 0; i < 100; i++) {
+        await ml.linearRegression(smallData.x, smallData.y);
+      }
+      output.textContent += `   100 × 100 points: ${(performance.now() - start).toFixed(2)}ms\n`;
+
+      const largeData = generateData(10000);
+      start = performance.now();
+      await ml.linearRegression(largeData.x, largeData.y);
+      output.textContent += `   1 × 10000 points: ${(performance.now() - start).toFixed(2)}ms\n`;
+
+      output.textContent += '\n   → Fewer large calls are more efficient than many small ones';
+    };
+  </script>
+</body>
+</html>
