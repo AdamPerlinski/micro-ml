@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>micro-ml Interactive Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #e0e0e0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #00d9ff, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 1.1rem;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #00ff88;
+      color: #000;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    .status {
+      text-align: center;
+      padding: 15px;
+      background: #0d1117;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #30363d;
+    }
+
+    .status.loading { border-color: #f0883e; }
+    .status.ready { border-color: #3fb950; }
+    .status.error { border-color: #f85149; }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 12px 24px;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #c9d1d9;
+    }
+
+    .tab:hover { background: #30363d; }
+    .tab.active {
+      background: linear-gradient(135deg, #238636, #2ea043);
+      border-color: #3fb950;
+      color: white;
+    }
+
+    .panel {
+      display: none;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 25px;
+    }
+
+    .panel.active { display: block; }
+
+    .panel h2 {
+      color: #fff;
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #8b949e;
+      font-size: 14px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 14px;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    textarea { min-height: 80px; resize: vertical; }
+
+    button {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #238636, #2ea043);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(46, 160, 67, 0.4);
+    }
+
+    button:active { transform: translateY(0); }
+
+    .results {
+      margin-top: 25px;
+      padding: 20px;
+      background: #161b22;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+    }
+
+    .results h3 {
+      color: #58a6ff;
+      margin-bottom: 15px;
+      font-size: 1rem;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    .result-item {
+      background: #21262d;
+      padding: 15px;
+      border-radius: 6px;
+    }
+
+    .result-label {
+      font-size: 11px;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .result-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #00ff88;
+      margin-top: 5px;
+      font-family: 'Monaco', monospace;
+    }
+
+    .result-value.blue { color: #58a6ff; }
+    .result-value.orange { color: #f0883e; }
+    .result-value.purple { color: #a371f7; }
+
+    .equation {
+      font-family: 'Monaco', monospace;
+      background: #21262d;
+      padding: 12px 16px;
+      border-radius: 6px;
+      color: #ffd93d;
+      margin-top: 15px;
+      overflow-x: auto;
+    }
+
+    .chart-container {
+      margin-top: 20px;
+      background: #161b22;
+      border-radius: 8px;
+      padding: 15px;
+    }
+
+    canvas {
+      max-height: 300px;
+    }
+
+    .data-preview {
+      margin-top: 15px;
+      padding: 15px;
+      background: #21262d;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #8b949e;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .row { grid-template-columns: 1fr; }
+      .result-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .time {
+      font-size: 11px;
+      color: #8b949e;
+      margin-top: 10px;
+    }
+
+    .error-msg {
+      color: #f85149;
+      background: rgba(248, 81, 73, 0.1);
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚡ micro-ml</h1>
+      <p class="subtitle">Tiny, blazing-fast WASM-powered regression library</p>
+      <span class="badge">~40KB gzipped</span>
+    </header>
+
+    <div id="status" class="status loading">
+      🔄 Loading WASM module...
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-panel="linear">📈 Linear</div>
+      <div class="tab" data-panel="polynomial">📊 Polynomial</div>
+      <div class="tab" data-panel="exponential">📈 Exponential</div>
+      <div class="tab" data-panel="moving-avg">〰️ Moving Avg</div>
+      <div class="tab" data-panel="forecast">🔮 Forecast</div>
+    </div>
+
+    <!-- Linear Regression Panel -->
+    <div id="linear" class="panel active">
+      <h2>Linear Regression</h2>
+      <p style="color: #8b949e; margin-bottom: 20px;">Fit a line: y = mx + b</p>
+
+      <div class="row">
+        <div class="input-group">
+          <label>X Values (comma-separated)</label>
+          <input type="text" id="linear-x" value="1, 2, 3, 4, 5, 6, 7, 8, 9, 10">
+        </div>
+        <div class="input-group">
+          <label>Y Values (comma-separated)</label>
+          <input type="text" id="linear-y" value="2.1, 4.3, 5.8, 8.2, 9.9, 12.1, 14.0, 16.2, 17.9, 20.1">
+        </div>
+      </div>
+
+      <button onclick="runLinearRegression()">Run Linear Regression</button>
+
+      <div id="linear-results" class="results" style="display: none;">
+        <h3>Results</h3>
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-label">Slope (m)</div>
+            <div class="result-value" id="linear-slope">-</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Intercept (b)</div>
+            <div class="result-value blue" id="linear-intercept">-</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">R² Score</div>
+            <div class="result-value orange" id="linear-r2">-</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Data Points</div>
+            <div class="result-value purple" id="linear-n">-</div>
+          </div>
+        </div>
+        <div class="equation" id="linear-equation">-</div>
+        <div class="time" id="linear-time">-</div>
+        <div class="chart-container">
+          <canvas id="linear-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Polynomial Regression Panel -->
+    <div id="polynomial" class="panel">
+      <h2>Polynomial Regression</h2>
+      <p style="color: #8b949e; margin-bottom: 20px;">Fit a curve: y = c₀ + c₁x + c₂x² + ...</p>
+
+      <div class="row">
+        <div class="input-group">
+          <label>X Values</label>
+          <input type="text" id="poly-x" value="-3, -2, -1, 0, 1, 2, 3, 4, 5">
+        </div>
+        <div class="input-group">
+          <label>Y Values</label>
+          <input type="text" id="poly-y" value="10, 5, 2, 1, 2, 5, 10, 17, 26">
+        </div>
+      </div>
+
+      <div class="input-group" style="max-width: 200px;">
+        <label>Polynomial Degree</label>
+        <select id="poly-degree">
+          <option value="2" selected>Quadratic (2)</option>
+          <option value="3">Cubic (3)</option>
+          <option value="4">Quartic (4)</option>
+        </select>
+      </div>
+
+      <button onclick="runPolynomialRegression()">Run Polynomial Regression</button>
+
+      <div id="poly-results" class="results" style="display: none;">
+        <h3>Results</h3>
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-label">Degree</div>
+            <div class="result-value" id="poly-deg-result">-</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">R² Score</div>
+            <div class="result-value orange" id="poly-r2">-</div>
+          </div>
+        </div>
+        <div class="equation" id="poly-equation">-</div>
+        <div class="data-preview" id="poly-coeffs">-</div>
+        <div class="time" id="poly-time">-</div>
+        <div class="chart-container">
+          <canvas id="poly-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exponential Regression Panel -->
+    <div id="exponential" class="panel">
+      <h2>Exponential Regression</h2>
+      <p style="color: #8b949e; margin-bottom: 20px;">Fit growth/decay: y = a × e^(bx)</p>
+
+      <div class="row">
+        <div class="input-group">
+          <label>X Values (time periods)</label>
+          <input type="text" id="exp-x" value="0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10">
+        </div>
+        <div class="input-group">
+          <label>Y Values (must be positive)</label>
+          <input type="text" id="exp-y" value="100, 122, 149, 182, 222, 271, 332, 405, 495, 604, 738">
+        </div>
+      </div>
+
+      <button onclick="runExponentialRegression()">Run Exponential Regression</button>
+
+      <div id="exp-results" class="results" style="display: none;">
+        <h3>Results</h3>
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-label">Initial (a)</div>
+            <div class="result-value" id="exp-a">-</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Growth Rate (b)</div>
+            <div class="result-value blue" id="exp-b">-</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Doubling Time</div>
+            <div class="result-value orange" id="exp-doubling">-</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">R² Score</div>
+            <div class="result-value purple" id="exp-r2">-</div>
+          </div>
+        </div>
+        <div class="equation" id="exp-equation">-</div>
+        <div class="time" id="exp-time">-</div>
+        <div class="chart-container">
+          <canvas id="exp-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Moving Averages Panel -->
+    <div id="moving-avg" class="panel">
+      <h2>Moving Averages</h2>
+      <p style="color: #8b949e; margin-bottom: 20px;">Smooth noisy data with SMA, EMA, or WMA</p>
+
+      <div class="input-group">
+        <label>Data Values (comma-separated)</label>
+        <textarea id="ma-data">100, 102, 98, 105, 110, 108, 115, 112, 120, 118, 125, 130, 128, 135, 140, 138, 145, 150, 148, 155</textarea>
+      </div>
+
+      <div class="row">
+        <div class="input-group">
+          <label>Window Size</label>
+          <input type="number" id="ma-window" value="5" min="2" max="20">
+        </div>
+        <div class="input-group">
+          <label>Type</label>
+          <select id="ma-type">
+            <option value="sma">Simple (SMA)</option>
+            <option value="ema" selected>Exponential (EMA)</option>
+            <option value="wma">Weighted (WMA)</option>
+          </select>
+        </div>
+      </div>
+
+      <button onclick="runMovingAverage()">Calculate Moving Average</button>
+
+      <div id="ma-results" class="results" style="display: none;">
+        <h3>Results</h3>
+        <div class="time" id="ma-time">-</div>
+        <div class="chart-container">
+          <canvas id="ma-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trend Forecast Panel -->
+    <div id="forecast" class="panel">
+      <h2>Trend Forecast</h2>
+      <p style="color: #8b949e; margin-bottom: 20px;">Analyze trends and predict future values</p>
+
+      <div class="input-group">
+        <label>Historical Data (comma-separated)</label>
+        <textarea id="forecast-data">42, 45, 48, 52, 55, 58, 62, 68, 72, 75, 80, 85</textarea>
+      </div>
+
+      <div class="input-group" style="max-width: 200px;">
+        <label>Periods to Forecast</label>
+        <input type="number" id="forecast-periods" value="5" min="1" max="20">
+      </div>
+
+      <button onclick="runForecast()">Generate Forecast</button>
+
+      <div id="forecast-results" class="results" style="display: none;">
+        <h3>Results</h3>
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-label">Direction</div>
+            <div class="result-value" id="forecast-direction">-</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Slope</div>
+            <div class="result-value blue" id="forecast-slope">-</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Strength (R²)</div>
+            <div class="result-value orange" id="forecast-strength">-</div>
+          </div>
+        </div>
+        <div class="data-preview" id="forecast-values">-</div>
+        <div class="time" id="forecast-time">-</div>
+        <div class="chart-container">
+          <canvas id="forecast-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module">
+    // After npm publish, change to: https://esm.sh/micro-ml
+    import * as microml from '../packages/micro-ml/dist/index.js';
+
+    // Make it globally available
+    window.ml = microml;
+
+    // Charts storage
+    window.charts = {};
+
+    // Initialize
+    async function init() {
+      const statusEl = document.getElementById('status');
+      try {
+        await microml.init();
+        statusEl.className = 'status ready';
+        statusEl.innerHTML = '✅ WASM module loaded successfully! Ready to use.';
+      } catch (err) {
+        statusEl.className = 'status error';
+        statusEl.innerHTML = '❌ Failed to load WASM: ' + err.message;
+        console.error(err);
+      }
+    }
+
+    init();
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.panel).classList.add('active');
+      });
+    });
+
+    // Helper to parse comma-separated numbers
+    function parseNumbers(str) {
+      return str.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+    }
+
+    // Linear Regression
+    window.runLinearRegression = async function() {
+      const x = parseNumbers(document.getElementById('linear-x').value);
+      const y = parseNumbers(document.getElementById('linear-y').value);
+
+      if (x.length < 2 || y.length < 2) {
+        alert('Need at least 2 data points');
+        return;
+      }
+
+      const start = performance.now();
+      try {
+        const model = await ml.linearRegression(x, y);
+        const elapsed = performance.now() - start;
+
+        document.getElementById('linear-slope').textContent = model.slope.toFixed(4);
+        document.getElementById('linear-intercept').textContent = model.intercept.toFixed(4);
+        document.getElementById('linear-r2').textContent = (model.rSquared * 100).toFixed(2) + '%';
+        document.getElementById('linear-n').textContent = model.n;
+        document.getElementById('linear-equation').textContent = model.toString();
+        document.getElementById('linear-time').textContent = `⚡ Computed in ${elapsed.toFixed(2)}ms`;
+        document.getElementById('linear-results').style.display = 'block';
+
+        // Chart
+        const predictions = model.predict(x);
+        if (window.charts.linear) window.charts.linear.destroy();
+        window.charts.linear = new Chart(document.getElementById('linear-chart'), {
+          type: 'scatter',
+          data: {
+            datasets: [
+              {
+                label: 'Data Points',
+                data: x.map((xi, i) => ({ x: xi, y: y[i] })),
+                backgroundColor: '#58a6ff',
+                pointRadius: 6
+              },
+              {
+                label: 'Regression Line',
+                data: x.map((xi, i) => ({ x: xi, y: predictions[i] })),
+                type: 'line',
+                borderColor: '#3fb950',
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#8b949e' } } },
+            scales: {
+              x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+              y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+            }
+          }
+        });
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    };
+
+    // Polynomial Regression
+    window.runPolynomialRegression = async function() {
+      const x = parseNumbers(document.getElementById('poly-x').value);
+      const y = parseNumbers(document.getElementById('poly-y').value);
+      const degree = parseInt(document.getElementById('poly-degree').value);
+
+      const start = performance.now();
+      try {
+        const model = await ml.polynomialRegression(x, y, { degree });
+        const elapsed = performance.now() - start;
+
+        document.getElementById('poly-deg-result').textContent = model.degree;
+        document.getElementById('poly-r2').textContent = (model.rSquared * 100).toFixed(2) + '%';
+        document.getElementById('poly-equation').textContent = model.toString();
+        document.getElementById('poly-coeffs').textContent = 'Coefficients: [' + model.getCoefficients().map(c => c.toFixed(4)).join(', ') + ']';
+        document.getElementById('poly-time').textContent = `⚡ Computed in ${elapsed.toFixed(2)}ms`;
+        document.getElementById('poly-results').style.display = 'block';
+
+        // Generate smooth curve
+        const xMin = Math.min(...x);
+        const xMax = Math.max(...x);
+        const curveX = [];
+        for (let i = 0; i <= 50; i++) {
+          curveX.push(xMin + (xMax - xMin) * i / 50);
+        }
+        const curveY = model.predict(curveX);
+
+        if (window.charts.poly) window.charts.poly.destroy();
+        window.charts.poly = new Chart(document.getElementById('poly-chart'), {
+          type: 'scatter',
+          data: {
+            datasets: [
+              {
+                label: 'Data Points',
+                data: x.map((xi, i) => ({ x: xi, y: y[i] })),
+                backgroundColor: '#58a6ff',
+                pointRadius: 6
+              },
+              {
+                label: 'Fitted Curve',
+                data: curveX.map((xi, i) => ({ x: xi, y: curveY[i] })),
+                type: 'line',
+                borderColor: '#f0883e',
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#8b949e' } } },
+            scales: {
+              x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+              y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+            }
+          }
+        });
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    };
+
+    // Exponential Regression
+    window.runExponentialRegression = async function() {
+      const x = parseNumbers(document.getElementById('exp-x').value);
+      const y = parseNumbers(document.getElementById('exp-y').value);
+
+      const start = performance.now();
+      try {
+        const model = await ml.exponentialRegression(x, y);
+        const elapsed = performance.now() - start;
+
+        document.getElementById('exp-a').textContent = model.a.toFixed(4);
+        document.getElementById('exp-b').textContent = model.b.toFixed(4);
+        document.getElementById('exp-doubling').textContent = model.doublingTime().toFixed(2) + ' periods';
+        document.getElementById('exp-r2').textContent = (model.rSquared * 100).toFixed(2) + '%';
+        document.getElementById('exp-equation').textContent = model.toString();
+        document.getElementById('exp-time').textContent = `⚡ Computed in ${elapsed.toFixed(2)}ms`;
+        document.getElementById('exp-results').style.display = 'block';
+
+        // Generate smooth curve
+        const xMin = Math.min(...x);
+        const xMax = Math.max(...x);
+        const curveX = [];
+        for (let i = 0; i <= 50; i++) {
+          curveX.push(xMin + (xMax - xMin) * i / 50);
+        }
+        const curveY = model.predict(curveX);
+
+        if (window.charts.exp) window.charts.exp.destroy();
+        window.charts.exp = new Chart(document.getElementById('exp-chart'), {
+          type: 'scatter',
+          data: {
+            datasets: [
+              {
+                label: 'Data Points',
+                data: x.map((xi, i) => ({ x: xi, y: y[i] })),
+                backgroundColor: '#58a6ff',
+                pointRadius: 6
+              },
+              {
+                label: 'Exponential Fit',
+                data: curveX.map((xi, i) => ({ x: xi, y: curveY[i] })),
+                type: 'line',
+                borderColor: '#a371f7',
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#8b949e' } } },
+            scales: {
+              x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+              y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+            }
+          }
+        });
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    };
+
+    // Moving Average
+    window.runMovingAverage = async function() {
+      const data = parseNumbers(document.getElementById('ma-data').value);
+      const window_ = parseInt(document.getElementById('ma-window').value);
+      const type = document.getElementById('ma-type').value;
+
+      const start = performance.now();
+      try {
+        let result;
+        if (type === 'sma') result = await ml.sma(data, window_);
+        else if (type === 'ema') result = await ml.ema(data, window_);
+        else result = await ml.wma(data, window_);
+
+        const elapsed = performance.now() - start;
+
+        document.getElementById('ma-time').textContent = `⚡ Computed in ${elapsed.toFixed(2)}ms`;
+        document.getElementById('ma-results').style.display = 'block';
+
+        const labels = data.map((_, i) => i + 1);
+
+        if (window.charts.ma) window.charts.ma.destroy();
+        window.charts.ma = new Chart(document.getElementById('ma-chart'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Original Data',
+                data: data,
+                borderColor: '#58a6ff',
+                backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                fill: true,
+                tension: 0.1
+              },
+              {
+                label: type.toUpperCase() + ' (' + window_ + ')',
+                data: result,
+                borderColor: '#3fb950',
+                borderWidth: 3,
+                pointRadius: 0,
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#8b949e' } } },
+            scales: {
+              x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+              y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+            }
+          }
+        });
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    };
+
+    // Trend Forecast
+    window.runForecast = async function() {
+      const data = parseNumbers(document.getElementById('forecast-data').value);
+      const periods = parseInt(document.getElementById('forecast-periods').value);
+
+      const start = performance.now();
+      try {
+        const trend = await ml.trendForecast(data, periods);
+        const elapsed = performance.now() - start;
+
+        const directionEmoji = trend.direction === 'up' ? '📈' : trend.direction === 'down' ? '📉' : '➡️';
+        document.getElementById('forecast-direction').textContent = directionEmoji + ' ' + trend.direction.toUpperCase();
+        document.getElementById('forecast-slope').textContent = trend.slope.toFixed(4) + '/period';
+        document.getElementById('forecast-strength').textContent = (trend.strength * 100).toFixed(1) + '%';
+        document.getElementById('forecast-values').textContent = 'Forecast: [' + trend.getForecast().map(v => v.toFixed(2)).join(', ') + ']';
+        document.getElementById('forecast-time').textContent = `⚡ Computed in ${elapsed.toFixed(2)}ms`;
+        document.getElementById('forecast-results').style.display = 'block';
+
+        const forecast = trend.getForecast();
+        const allLabels = [...data.map((_, i) => 'T' + (i + 1)), ...forecast.map((_, i) => 'T' + (data.length + i + 1) + '*')];
+
+        if (window.charts.forecast) window.charts.forecast.destroy();
+        window.charts.forecast = new Chart(document.getElementById('forecast-chart'), {
+          type: 'line',
+          data: {
+            labels: allLabels,
+            datasets: [
+              {
+                label: 'Historical',
+                data: [...data, ...Array(periods).fill(null)],
+                borderColor: '#58a6ff',
+                backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                fill: true,
+                tension: 0.1,
+                pointRadius: 4
+              },
+              {
+                label: 'Forecast',
+                data: [...Array(data.length).fill(null), ...forecast],
+                borderColor: '#3fb950',
+                borderDash: [5, 5],
+                borderWidth: 3,
+                pointRadius: 5,
+                pointBackgroundColor: '#3fb950',
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#8b949e' } } },
+            scales: {
+              x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+              y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+            }
+          }
+        });
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    };
+  </script>
+</body>
+</html>

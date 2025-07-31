@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>micro-ml - What Can You Do?</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    header {
+      text-align: center;
+      padding: 60px 20px;
+      background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      color: #94a3b8;
+      margin-bottom: 30px;
+    }
+
+    .size-compare {
+      display: inline-flex;
+      gap: 20px;
+      background: #1e293b;
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-family: monospace;
+    }
+
+    .size-compare .big { color: #f87171; }
+    .size-compare .small { color: #4ade80; font-weight: bold; }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .usecase {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 30px;
+      border: 1px solid #334155;
+    }
+
+    .usecase-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .usecase-icon {
+      font-size: 2.5rem;
+      background: #334155;
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .usecase-title {
+      flex: 1;
+    }
+
+    .usecase-title h2 {
+      font-size: 1.5rem;
+      color: #f8fafc;
+      margin-bottom: 5px;
+    }
+
+    .usecase-title p {
+      color: #94a3b8;
+    }
+
+    .problem {
+      background: #0f172a;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .problem-label {
+      font-size: 0.75rem;
+      color: #f59e0b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+
+    .solution {
+      background: #0f172a;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #4ade80;
+    }
+
+    .solution-label {
+      font-size: 0.75rem;
+      color: #4ade80;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+
+    .demo-area {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 700px) {
+      .demo-area { grid-template-columns: 1fr; }
+    }
+
+    .demo-input, .demo-output {
+      background: #0f172a;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    .demo-input h4, .demo-output h4 {
+      font-size: 0.85rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+    }
+
+    textarea {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    button {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 15px;
+      width: 100%;
+      font-weight: 500;
+    }
+
+    button:hover { opacity: 0.9; }
+
+    .result {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #4ade80;
+      margin-bottom: 10px;
+    }
+
+    .result-sub {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    .chart-container {
+      height: 200px;
+      margin-top: 20px;
+    }
+
+    .func-tag {
+      display: inline-block;
+      background: #3b82f6;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      margin-top: 10px;
+    }
+
+    .picker-section {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 16px;
+      margin-bottom: 40px;
+    }
+
+    .picker-section h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .picker-card {
+      background: #0f172a;
+      padding: 20px;
+      border-radius: 12px;
+      border: 2px solid #334155;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .picker-card:hover {
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+    }
+
+    .picker-card h4 {
+      color: #f8fafc;
+      margin-bottom: 8px;
+    }
+
+    .picker-card p {
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .status {
+      text-align: center;
+      padding: 10px;
+      color: #4ade80;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>micro-ml</h1>
+    <p class="subtitle">Predictions & Trend Analysis for the Browser</p>
+    <div class="size-compare">
+      <span class="big">TensorFlow.js = 500KB</span>
+      <span>vs</span>
+      <span class="small">micro-ml = 40KB</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="status" class="status">Loading WASM...</div>
+
+    <!-- Function Picker -->
+    <div class="picker-section">
+      <h2>What Do You Want To Do?</h2>
+      <div class="picker-grid">
+        <div class="picker-card" onclick="scrollTo('forecast')">
+          <h4>Predict the Future</h4>
+          <p>Forecast next month's sales, weight loss date, etc.</p>
+        </div>
+        <div class="picker-card" onclick="scrollTo('trend')">
+          <h4>Find Trends</h4>
+          <p>Is data going up, down, or flat?</p>
+        </div>
+        <div class="picker-card" onclick="scrollTo('smooth')">
+          <h4>Smooth Noisy Data</h4>
+          <p>Clean up sensor readings, stock prices</p>
+        </div>
+        <div class="picker-card" onclick="scrollTo('growth')">
+          <h4>Analyze Growth</h4>
+          <p>Doubling time, growth rate, projections</p>
+        </div>
+        <div class="picker-card" onclick="scrollTo('curve')">
+          <h4>Fit a Curve</h4>
+          <p>When data isn't a straight line</p>
+        </div>
+        <div class="picker-card" onclick="scrollTo('peaks')">
+          <h4>Detect Spikes</h4>
+          <p>Find anomalies, peaks, and dips</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Use Case 1: Forecast -->
+    <div class="usecase" id="forecast">
+      <div class="usecase-header">
+        <div class="usecase-icon">📈</div>
+        <div class="usecase-title">
+          <h2>Predict Future Values</h2>
+          <p>Forecast what's coming next based on historical data</p>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-label">The Problem</div>
+        "I have 6 months of sales data. What will next month look like?"
+      </div>
+
+      <div class="solution">
+        <div class="solution-label">The Solution</div>
+        Use <code>trendForecast()</code> to predict future values and understand the trend direction.
+      </div>
+
+      <div class="demo-area">
+        <div class="demo-input">
+          <h4>Your Data (monthly sales)</h4>
+          <textarea id="forecast-input">42000, 45000, 48000, 52000, 55000, 58000</textarea>
+          <button onclick="runForecast()">Predict Next 3 Months</button>
+        </div>
+        <div class="demo-output">
+          <h4>Prediction</h4>
+          <div class="result" id="forecast-result">-</div>
+          <div class="result-sub" id="forecast-sub">Enter data and click predict</div>
+          <div class="func-tag">trendForecast(data, 3)</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="forecast-chart"></canvas></div>
+    </div>
+
+    <!-- Use Case 2: Trend -->
+    <div class="usecase" id="trend">
+      <div class="usecase-header">
+        <div class="usecase-icon">📊</div>
+        <div class="usecase-title">
+          <h2>Find Trends in Data</h2>
+          <p>Is your data going up, down, or staying flat?</p>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-label">The Problem</div>
+        "Are my users growing? How fast? Is this trend strong or weak?"
+      </div>
+
+      <div class="solution">
+        <div class="solution-label">The Solution</div>
+        Use <code>linearRegressionSimple()</code> to get slope (rate of change) and R² (trend strength).
+      </div>
+
+      <div class="demo-area">
+        <div class="demo-input">
+          <h4>Your Data (daily active users)</h4>
+          <textarea id="trend-input">1200, 1250, 1180, 1320, 1400, 1350, 1450, 1520, 1480, 1600</textarea>
+          <button onclick="runTrend()">Analyze Trend</button>
+        </div>
+        <div class="demo-output">
+          <h4>Analysis</h4>
+          <div class="result" id="trend-result">-</div>
+          <div class="result-sub" id="trend-sub">Enter data and click analyze</div>
+          <div class="func-tag">linearRegressionSimple(data)</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="trend-chart"></canvas></div>
+    </div>
+
+    <!-- Use Case 3: Smooth -->
+    <div class="usecase" id="smooth">
+      <div class="usecase-header">
+        <div class="usecase-icon">〰️</div>
+        <div class="usecase-title">
+          <h2>Smooth Noisy Data</h2>
+          <p>Remove random noise to see the real trend</p>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-label">The Problem</div>
+        "My temperature sensor jumps around. I want a stable reading."
+      </div>
+
+      <div class="solution">
+        <div class="solution-label">The Solution</div>
+        Use <code>ema()</code> (Exponential Moving Average) to smooth out the noise.
+      </div>
+
+      <div class="demo-area">
+        <div class="demo-input">
+          <h4>Noisy Sensor Data</h4>
+          <textarea id="smooth-input">22.1, 25.3, 21.8, 24.9, 23.2, 26.1, 22.5, 24.8, 23.1, 25.5, 22.9, 24.2</textarea>
+          <button onclick="runSmooth()">Smooth Data</button>
+        </div>
+        <div class="demo-output">
+          <h4>Smoothed Reading</h4>
+          <div class="result" id="smooth-result">-</div>
+          <div class="result-sub" id="smooth-sub">Raw data is noisy, smoothed shows real value</div>
+          <div class="func-tag">ema(data, 3)</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="smooth-chart"></canvas></div>
+    </div>
+
+    <!-- Use Case 4: Growth -->
+    <div class="usecase" id="growth">
+      <div class="usecase-header">
+        <div class="usecase-icon">🚀</div>
+        <div class="usecase-title">
+          <h2>Analyze Exponential Growth</h2>
+          <p>Find doubling time, growth rate, and projections</p>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-label">The Problem</div>
+        "Our user base is growing fast. When will we hit 1 million?"
+      </div>
+
+      <div class="solution">
+        <div class="solution-label">The Solution</div>
+        Use <code>exponentialRegression()</code> to model growth and find doubling time.
+      </div>
+
+      <div class="demo-area">
+        <div class="demo-input">
+          <h4>Monthly Users</h4>
+          <textarea id="growth-input">1000, 1500, 2200, 3300, 5000, 7500</textarea>
+          <button onclick="runGrowth()">Analyze Growth</button>
+        </div>
+        <div class="demo-output">
+          <h4>Growth Analysis</h4>
+          <div class="result" id="growth-result">-</div>
+          <div class="result-sub" id="growth-sub">Enter data and click analyze</div>
+          <div class="func-tag">exponentialRegression(x, y)</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="growth-chart"></canvas></div>
+    </div>
+
+    <!-- Use Case 5: Curve -->
+    <div class="usecase" id="curve">
+      <div class="usecase-header">
+        <div class="usecase-icon">📐</div>
+        <div class="usecase-title">
+          <h2>Fit a Curve to Data</h2>
+          <p>When data follows a curved pattern, not a straight line</p>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-label">The Problem</div>
+        "Learning a skill is fast at first, then slows down. How do I model this?"
+      </div>
+
+      <div class="solution">
+        <div class="solution-label">The Solution</div>
+        Use <code>logarithmicRegression()</code> for diminishing returns, or <code>polynomialRegression()</code> for curved patterns.
+      </div>
+
+      <div class="demo-area">
+        <div class="demo-input">
+          <h4>Practice Hours → Skill Level</h4>
+          <textarea id="curve-input-x">1, 2, 5, 10, 20, 50, 100</textarea>
+          <textarea id="curve-input-y" style="margin-top: 10px">10, 25, 45, 60, 75, 90, 98</textarea>
+          <button onclick="runCurve()">Fit Curve</button>
+        </div>
+        <div class="demo-output">
+          <h4>Model</h4>
+          <div class="result" id="curve-result">-</div>
+          <div class="result-sub" id="curve-sub">Shows how skill grows with practice</div>
+          <div class="func-tag">logarithmicRegression(x, y)</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="curve-chart"></canvas></div>
+    </div>
+
+    <!-- Use Case 6: Peaks -->
+    <div class="usecase" id="peaks">
+      <div class="usecase-header">
+        <div class="usecase-icon">⚡</div>
+        <div class="usecase-title">
+          <h2>Detect Spikes & Anomalies</h2>
+          <p>Find peaks, dips, and unusual values in your data</p>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-label">The Problem</div>
+        "Alert me when there's a spike in server response time."
+      </div>
+
+      <div class="solution">
+        <div class="solution-label">The Solution</div>
+        Use <code>findPeaks()</code> to detect local maxima (spikes) in the data.
+      </div>
+
+      <div class="demo-area">
+        <div class="demo-input">
+          <h4>Response Times (ms)</h4>
+          <textarea id="peaks-input">50, 55, 48, 120, 52, 49, 180, 55, 51, 48, 95, 50</textarea>
+          <button onclick="runPeaks()">Find Spikes</button>
+        </div>
+        <div class="demo-output">
+          <h4>Spikes Found</h4>
+          <div class="result" id="peaks-result">-</div>
+          <div class="result-sub" id="peaks-sub">Indices where spikes occur</div>
+          <div class="func-tag">findPeaks(data)</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="peaks-chart"></canvas></div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    // After npm publish, change to: https://esm.sh/micro-ml
+    import * as ml from '../packages/micro-ml/dist/index.js';
+    window.ml = ml;
+
+    // Initialize
+    try {
+      await ml.init();
+      document.getElementById('status').textContent = '✓ Ready to use';
+      document.getElementById('status').style.color = '#4ade80';
+    } catch (e) {
+      document.getElementById('status').textContent = 'Error: ' + e.message;
+      document.getElementById('status').style.color = '#f87171';
+    }
+
+    // Charts storage
+    window.charts = {};
+
+    // Helper
+    window.scrollTo = (id) => {
+      document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+    };
+
+    function parseData(str) {
+      return str.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+    }
+
+    // Forecast
+    window.runForecast = async () => {
+      const data = parseData(document.getElementById('forecast-input').value);
+      const forecast = await ml.trendForecast(data, 3);
+      const values = forecast.getForecast();
+
+      document.getElementById('forecast-result').textContent =
+        values.map(v => '$' + Math.round(v).toLocaleString()).join(', ');
+      document.getElementById('forecast-sub').textContent =
+        `Trend: ${forecast.direction.toUpperCase()} | Confidence: ${(forecast.strength * 100).toFixed(0)}%`;
+
+      if (charts.forecast) charts.forecast.destroy();
+      charts.forecast = new Chart(document.getElementById('forecast-chart'), {
+        type: 'line',
+        data: {
+          labels: [...data.map((_, i) => 'M' + (i+1)), 'M' + (data.length+1), 'M' + (data.length+2), 'M' + (data.length+3)],
+          datasets: [
+            { label: 'Actual', data: [...data, null, null, null], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true },
+            { label: 'Forecast', data: [...Array(data.length).fill(null), ...values], borderColor: '#4ade80', borderDash: [5,5], pointRadius: 5 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' }}}, scales: { x: { ticks: { color: '#64748b' }}, y: { ticks: { color: '#64748b' }}}}
+      });
+    };
+
+    // Trend
+    window.runTrend = async () => {
+      const data = parseData(document.getElementById('trend-input').value);
+      const model = await ml.linearRegressionSimple(data);
+
+      const direction = model.slope > 0 ? '↑ Growing' : model.slope < 0 ? '↓ Declining' : '→ Flat';
+      document.getElementById('trend-result').textContent = direction;
+      document.getElementById('trend-sub').textContent =
+        `${Math.abs(model.slope).toFixed(1)} users/day | R² = ${(model.rSquared * 100).toFixed(0)}% confidence`;
+
+      const trendline = data.map((_, i) => model.slope * i + model.intercept);
+
+      if (charts.trend) charts.trend.destroy();
+      charts.trend = new Chart(document.getElementById('trend-chart'), {
+        type: 'line',
+        data: {
+          labels: data.map((_, i) => 'Day ' + (i+1)),
+          datasets: [
+            { label: 'Data', data: data, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true },
+            { label: 'Trend', data: trendline, borderColor: '#f59e0b', borderDash: [5,5], pointRadius: 0 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' }}}, scales: { x: { ticks: { color: '#64748b' }}, y: { ticks: { color: '#64748b' }}}}
+      });
+    };
+
+    // Smooth
+    window.runSmooth = async () => {
+      const data = parseData(document.getElementById('smooth-input').value);
+      const smoothed = await ml.ema(data, 3);
+
+      const lastRaw = data[data.length - 1];
+      const lastSmooth = smoothed[smoothed.length - 1];
+
+      document.getElementById('smooth-result').textContent = lastSmooth.toFixed(1) + '°';
+      document.getElementById('smooth-sub').textContent =
+        `Raw: ${lastRaw.toFixed(1)}° (jumpy) → Smoothed: ${lastSmooth.toFixed(1)}° (stable)`;
+
+      if (charts.smooth) charts.smooth.destroy();
+      charts.smooth = new Chart(document.getElementById('smooth-chart'), {
+        type: 'line',
+        data: {
+          labels: data.map((_, i) => i + 1),
+          datasets: [
+            { label: 'Raw (noisy)', data: data, borderColor: 'rgba(248,113,113,0.5)', borderWidth: 1, pointRadius: 2 },
+            { label: 'Smoothed', data: smoothed, borderColor: '#4ade80', borderWidth: 3, pointRadius: 0 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' }}}, scales: { x: { ticks: { color: '#64748b' }, title: { display: true, text: 'Time', color: '#64748b' }}, y: { ticks: { color: '#64748b' }, title: { display: true, text: 'Temperature', color: '#64748b' }}}}
+      });
+    };
+
+    // Growth
+    window.runGrowth = async () => {
+      const data = parseData(document.getElementById('growth-input').value);
+      const x = data.map((_, i) => i);
+      const model = await ml.exponentialRegression(x, data);
+
+      document.getElementById('growth-result').textContent =
+        `Doubles every ${model.doublingTime().toFixed(1)} months`;
+
+      const growthRate = ((Math.exp(model.b) - 1) * 100).toFixed(0);
+      document.getElementById('growth-sub').textContent =
+        `${growthRate}% monthly growth | Fit: ${(model.rSquared * 100).toFixed(0)}%`;
+
+      const fitted = x.map(xi => model.a * Math.exp(model.b * xi));
+      const futureX = [data.length, data.length + 1, data.length + 2];
+      const futureY = futureX.map(xi => model.a * Math.exp(model.b * xi));
+
+      if (charts.growth) charts.growth.destroy();
+      charts.growth = new Chart(document.getElementById('growth-chart'), {
+        type: 'line',
+        data: {
+          labels: [...data.map((_, i) => 'M' + (i+1)), 'M' + (data.length+1), 'M' + (data.length+2), 'M' + (data.length+3)],
+          datasets: [
+            { label: 'Actual', data: [...data, null, null, null], borderColor: '#3b82f6', pointRadius: 5, fill: false },
+            { label: 'Exponential Fit', data: [...fitted, ...futureY], borderColor: '#4ade80', pointRadius: 0, fill: false },
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' }}}, scales: { x: { ticks: { color: '#64748b' }}, y: { ticks: { color: '#64748b' }}}}
+      });
+    };
+
+    // Curve
+    window.runCurve = async () => {
+      const x = parseData(document.getElementById('curve-input-x').value);
+      const y = parseData(document.getElementById('curve-input-y').value);
+      const model = await ml.logarithmicRegression(x, y);
+
+      document.getElementById('curve-result').textContent = model.toString();
+      document.getElementById('curve-sub').textContent =
+        `Fast early growth, then slows | Fit: ${(model.rSquared * 100).toFixed(0)}%`;
+
+      const fitted = x.map(xi => model.a + model.b * Math.log(xi));
+
+      if (charts.curve) charts.curve.destroy();
+      charts.curve = new Chart(document.getElementById('curve-chart'), {
+        type: 'line',
+        data: {
+          labels: x.map(v => v + 'h'),
+          datasets: [
+            { label: 'Actual Skill', data: y, borderColor: '#3b82f6', pointRadius: 5, fill: false },
+            { label: 'Logarithmic Fit', data: fitted, borderColor: '#a78bfa', pointRadius: 0, fill: false },
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' }}}, scales: { x: { ticks: { color: '#64748b' }, title: { display: true, text: 'Practice Hours', color: '#64748b' }}, y: { ticks: { color: '#64748b' }, title: { display: true, text: 'Skill %', color: '#64748b' }}}}
+      });
+    };
+
+    // Peaks
+    window.runPeaks = async () => {
+      const data = parseData(document.getElementById('peaks-input').value);
+      const peaks = await ml.findPeaks(data);
+
+      document.getElementById('peaks-result').textContent =
+        peaks.length + ' spikes found';
+      document.getElementById('peaks-sub').textContent =
+        peaks.length > 0 ? `At positions: ${peaks.join(', ')} (values: ${peaks.map(i => data[i]).join(', ')}ms)` : 'No spikes detected';
+
+      const peakData = data.map((v, i) => peaks.includes(i) ? v : null);
+
+      if (charts.peaks) charts.peaks.destroy();
+      charts.peaks = new Chart(document.getElementById('peaks-chart'), {
+        type: 'line',
+        data: {
+          labels: data.map((_, i) => i + 1),
+          datasets: [
+            { label: 'Response Time', data: data, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true },
+            { label: 'Spikes', data: peakData, borderColor: '#f87171', pointRadius: 8, pointBackgroundColor: '#f87171', showLine: false }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' }}}, scales: { x: { ticks: { color: '#64748b' }, title: { display: true, text: 'Request #', color: '#64748b' }}, y: { ticks: { color: '#64748b' }, title: { display: true, text: 'Response Time (ms)', color: '#64748b' }}}}
+      });
+    };
+  </script>
+</body>
+</html>
