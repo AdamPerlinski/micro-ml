@@ -21,6 +21,10 @@ import {
   findTroughs,
   predict,
   trendLine,
+  rmse,
+  mae,
+  mape,
+  errorMetrics,
 } from './index.js';
 
 // Helper for approximate equality
@@ -464,6 +468,61 @@ describe('trendLine', () => {
     expect(result.trend[0]).toBeCloseTo(60, 1);
     expect(result.trend[1]).toBeCloseTo(70, 1);
     expect(result.trend[2]).toBeCloseTo(80, 1);
+  });
+});
+
+// ============================================================================
+// Error Metrics
+// ============================================================================
+
+describe('rmse', () => {
+  it('returns 0 for perfect predictions', () => {
+    expect(rmse([1, 2, 3], [1, 2, 3])).toBe(0);
+  });
+
+  it('calculates RMSE correctly', () => {
+    // errors: 1, -1, 1 → squared: 1, 1, 1 → mean: 1 → sqrt: 1
+    expect(rmse([1, 2, 3], [2, 1, 4])).toBeCloseTo(1, 5);
+  });
+
+  it('throws on mismatched lengths', () => {
+    expect(() => rmse([1, 2], [1])).toThrow('same length');
+  });
+});
+
+describe('mae', () => {
+  it('returns 0 for perfect predictions', () => {
+    expect(mae([1, 2, 3], [1, 2, 3])).toBe(0);
+  });
+
+  it('calculates MAE correctly', () => {
+    // errors: |1|, |-1|, |1| → mean: 1
+    expect(mae([1, 2, 3], [2, 1, 4])).toBeCloseTo(1, 5);
+  });
+});
+
+describe('mape', () => {
+  it('returns 0 for perfect predictions', () => {
+    expect(mape([100, 200, 300], [100, 200, 300])).toBe(0);
+  });
+
+  it('calculates percentage error correctly', () => {
+    // 10% off on each: (10/100 + 10/200 + 10/300) / 3 * 100
+    expect(mape([100, 200, 300], [110, 190, 310])).toBeCloseTo(5.56, 1);
+  });
+
+  it('skips zero actual values', () => {
+    expect(mape([0, 100], [10, 110])).toBeCloseTo(10, 5);
+  });
+});
+
+describe('errorMetrics', () => {
+  it('returns all metrics at once', () => {
+    const metrics = errorMetrics([1, 2, 3], [1, 2, 3]);
+    expect(metrics.rmse).toBe(0);
+    expect(metrics.mae).toBe(0);
+    expect(metrics.mape).toBe(0);
+    expect(metrics.n).toBe(3);
   });
 });
 

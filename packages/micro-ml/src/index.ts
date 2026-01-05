@@ -10,6 +10,7 @@ import type {
   MovingAverageOptions,
   PolynomialOptions,
   SmoothingOptions,
+  ErrorMetrics,
 } from './types.js';
 
 // WASM module instance (lazily loaded)
@@ -488,4 +489,92 @@ export async function trendLine(
   const futureX = Array.from({ length: futurePoints }, (_, i) => data.length + i);
   const trend = model.predict(futureX);
   return { model, trend };
+}
+
+// ============================================================================
+// Error Metrics
+// ============================================================================
+
+/**
+ * Root Mean Squared Error between actual and predicted values
+ *
+ * @example
+ * ```ts
+ * const error = rmse([1, 2, 3], [1.1, 2.2, 2.8]); // ~0.173
+ * ```
+ */
+export function rmse(actual: number[], predicted: number[]): number {
+  if (actual.length !== predicted.length) {
+    throw new Error('Arrays must have the same length');
+  }
+  const n = actual.length;
+  const sumSqErr = actual.reduce(
+    (sum, val, i) => sum + (val - predicted[i]) ** 2,
+    0
+  );
+  return Math.sqrt(sumSqErr / n);
+}
+
+/**
+ * Mean Absolute Error between actual and predicted values
+ *
+ * @example
+ * ```ts
+ * const error = mae([1, 2, 3], [1.1, 2.2, 2.8]); // ~0.167
+ * ```
+ */
+export function mae(actual: number[], predicted: number[]): number {
+  if (actual.length !== predicted.length) {
+    throw new Error('Arrays must have the same length');
+  }
+  const n = actual.length;
+  const sumAbsErr = actual.reduce(
+    (sum, val, i) => sum + Math.abs(val - predicted[i]),
+    0
+  );
+  return sumAbsErr / n;
+}
+
+/**
+ * Mean Absolute Percentage Error between actual and predicted values.
+ * Returns value as a percentage (e.g. 5.0 means 5%).
+ * Skips data points where actual value is zero.
+ *
+ * @example
+ * ```ts
+ * const error = mape([100, 200, 300], [110, 190, 310]); // ~5.56
+ * ```
+ */
+export function mape(actual: number[], predicted: number[]): number {
+  if (actual.length !== predicted.length) {
+    throw new Error('Arrays must have the same length');
+  }
+  let sum = 0;
+  let count = 0;
+  for (let i = 0; i < actual.length; i++) {
+    if (actual[i] !== 0) {
+      sum += Math.abs((actual[i] - predicted[i]) / actual[i]);
+      count++;
+    }
+  }
+  if (count === 0) return 0;
+  return (sum / count) * 100;
+}
+
+/**
+ * Compute all error metrics at once
+ *
+ * @example
+ * ```ts
+ * const metrics = errorMetrics([1, 2, 3], [1.1, 2.2, 2.8]);
+ * console.log(metrics.rmse, metrics.mae, metrics.mape);
+ * ```
+ */
+export function errorMetrics(actual: number[], predicted: number[]): ErrorMetrics {
+  return {
+    rmse: rmse(actual, predicted),
+    mae: mae(actual, predicted),
+    mape: mape(actual, predicted),
+    n: actual.length,
+  };
 }

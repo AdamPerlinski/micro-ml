@@ -145,3 +145,17 @@ export interface SmoothingOptions {
   /** Smoothing factor (0-1, default: 0.3) */
   alpha?: number;
 }
+
+/**
+ * Statistical error metrics for evaluating model accuracy
+ */
+export interface ErrorMetrics {
+  /** Root Mean Squared Error */
+  readonly rmse: number;
+  /** Mean Absolute Error */
+  readonly mae: number;
+  /** Mean Absolute Percentage Error (as percentage, 0-100+) */
+  readonly mape: number;
+  /** Number of data points compared */
+  readonly n: number;
+}
