@@ -11,6 +11,7 @@ import type {
   PolynomialOptions,
   SmoothingOptions,
   ErrorMetrics,
+  ResidualsResult,
 } from './types.js';
 
 // WASM module instance (lazily loaded)
@@ -577,4 +578,30 @@ export function errorMetrics(actual: number[], predicted: number[]): ErrorMetric
     mape: mape(actual, predicted),
     n: actual.length,
   };
+}
+
+/**
+ * Analyze residuals (actual - predicted) for model diagnostics.
+ * Useful for checking whether a model's errors are randomly distributed.
+ *
+ * @example
+ * ```ts
+ * const result = residuals([1, 2, 3], [1.1, 1.9, 3.2]);
+ * console.log(result.mean);         // ~-0.067 (close to 0 = unbiased)
+ * console.log(result.standardized); // z-scores of residuals
+ * ```
+ */
+export function residuals(actual: number[], predicted: number[]): ResidualsResult {
+  if (actual.length !== predicted.length) {
+    throw new Error('Arrays must have the same length');
+  }
+  const resids = actual.map((val, i) => val - predicted[i]);
+  const mean = resids.reduce((a, b) => a + b, 0) / resids.length;
+  const variance = resids.reduce((sum, r) => sum + (r - mean) ** 2, 0) / resids.length;
+  const stdDev = Math.sqrt(variance);
+  const standardized = stdDev === 0
+    ? resids.map(() => 0)
+    : resids.map(r => (r - mean) / stdDev);
+
+  return { residuals: resids, mean, stdDev, standardized };
 }
