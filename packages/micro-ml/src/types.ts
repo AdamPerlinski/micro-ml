@@ -159,3 +159,17 @@ export interface ErrorMetrics {
   /** Number of data points compared */
   readonly n: number;
 }
+
+/**
+ * Result of residuals analysis
+ */
+export interface ResidualsResult {
+  /** Raw residuals (actual - predicted) */
+  readonly residuals: number[];
+  /** Mean of residuals (should be ~0 for unbiased model) */
+  readonly mean: number;
+  /** Standard deviation of residuals */
+  readonly stdDev: number;
+  /** Standardized residuals (residual / stdDev) */
+  readonly standardized: number[];
+}

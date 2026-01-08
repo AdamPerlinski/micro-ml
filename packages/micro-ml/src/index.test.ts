@@ -25,6 +25,7 @@ import {
   mae,
   mape,
   errorMetrics,
+  residuals,
 } from './index.js';
 
 // Helper for approximate equality
@@ -523,6 +524,32 @@ describe('errorMetrics', () => {
     expect(metrics.mae).toBe(0);
     expect(metrics.mape).toBe(0);
     expect(metrics.n).toBe(3);
+  });
+});
+
+describe('residuals', () => {
+  it('returns zero residuals for perfect fit', () => {
+    const result = residuals([1, 2, 3], [1, 2, 3]);
+    expect(result.residuals).toEqual([0, 0, 0]);
+    expect(result.mean).toBe(0);
+    expect(result.stdDev).toBe(0);
+  });
+
+  it('calculates residuals correctly', () => {
+    const result = residuals([10, 20, 30], [12, 18, 30]);
+    expect(result.residuals).toEqual([-2, 2, 0]);
+    expect(result.mean).toBeCloseTo(0, 5);
+  });
+
+  it('computes standardized residuals', () => {
+    const result = residuals([10, 20, 30], [12, 18, 30]);
+    // All standardized residuals should have mean ~0 and std ~1
+    const stdMean = result.standardized.reduce((a, b) => a + b, 0) / result.standardized.length;
+    expect(stdMean).toBeCloseTo(0, 5);
+  });
+
+  it('throws on mismatched lengths', () => {
+    expect(() => residuals([1, 2], [1])).toThrow('same length');
   });
 });
 
