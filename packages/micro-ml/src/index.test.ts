@@ -26,6 +26,9 @@ import {
   mape,
   errorMetrics,
   residuals,
+  minMaxNormalize,
+  zScoreNormalize,
+  normalize,
 } from './index.js';
 
 // Helper for approximate equality
@@ -508,8 +511,9 @@ describe('mape', () => {
   });
 
   it('calculates percentage error correctly', () => {
-    // 10% off on each: (10/100 + 10/200 + 10/300) / 3 * 100
-    expect(mape([100, 200, 300], [110, 190, 310])).toBeCloseTo(5.56, 1);
+    // |100-110|/100 + |200-190|/200 + |300-310|/300 = 0.1 + 0.05 + 0.033 = 0.183
+    // 0.183 / 3 * 100 = 6.11%
+    expect(mape([100, 200, 300], [110, 190, 310])).toBeCloseTo(6.11, 1);
   });
 
   it('skips zero actual values', () => {
@@ -550,6 +554,67 @@ describe('residuals', () => {
 
   it('throws on mismatched lengths', () => {
     expect(() => residuals([1, 2], [1])).toThrow('same length');
+  });
+});
+
+// ============================================================================
+// Data Normalization
+// ============================================================================
+
+describe('minMaxNormalize', () => {
+  it('scales data to [0, 1]', () => {
+    const result = minMaxNormalize([10, 20, 30, 40, 50]);
+    expect(result.data[0]).toBeCloseTo(0, 5);
+    expect(result.data[2]).toBeCloseTo(0.5, 5);
+    expect(result.data[4]).toBeCloseTo(1, 5);
+  });
+
+  it('inverse restores original values', () => {
+    const original = [10, 20, 30, 40, 50];
+    const result = minMaxNormalize(original);
+    const restored = result.inverse(result.data);
+    original.forEach((val, i) => expect(restored[i]).toBeCloseTo(val, 5));
+  });
+
+  it('handles constant data', () => {
+    const result = minMaxNormalize([5, 5, 5]);
+    expect(result.data).toEqual([0, 0, 0]);
+    expect(result.inverse([0])).toEqual([5]);
+  });
+});
+
+describe('zScoreNormalize', () => {
+  it('centers data around 0', () => {
+    const result = zScoreNormalize([10, 20, 30, 40, 50]);
+    const mean = result.data.reduce((a, b) => a + b, 0) / result.data.length;
+    expect(mean).toBeCloseTo(0, 5);
+  });
+
+  it('sets standard deviation to 1', () => {
+    const result = zScoreNormalize([10, 20, 30, 40, 50]);
+    const mean = result.data.reduce((a, b) => a + b, 0) / result.data.length;
+    const variance = result.data.reduce((sum, v) => sum + (v - mean) ** 2, 0) / result.data.length;
+    expect(Math.sqrt(variance)).toBeCloseTo(1, 5);
+  });
+
+  it('inverse restores original values', () => {
+    const original = [10, 20, 30, 40, 50];
+    const result = zScoreNormalize(original);
+    const restored = result.inverse(result.data);
+    original.forEach((val, i) => expect(restored[i]).toBeCloseTo(val, 3));
+  });
+});
+
+describe('normalize', () => {
+  it('defaults to min-max', () => {
+    const result = normalize([0, 50, 100]);
+    expect(result.data[1]).toBeCloseTo(0.5, 5);
+  });
+
+  it('supports z-score type', () => {
+    const result = normalize([10, 20, 30], 'z-score');
+    const mean = result.data.reduce((a, b) => a + b, 0) / result.data.length;
+    expect(mean).toBeCloseTo(0, 5);
   });
 });
 

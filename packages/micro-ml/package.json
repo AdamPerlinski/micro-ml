@@ -17,8 +17,7 @@
     }
   },
   "files": [
-    "dist",
-    "wasm"
+    "dist"
   ],
   "scripts": {
     "build": "tsup && cp wasm/micro_ml_core_bg.wasm dist/",

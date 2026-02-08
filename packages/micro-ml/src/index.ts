@@ -12,6 +12,8 @@ import type {
   SmoothingOptions,
   ErrorMetrics,
   ResidualsResult,
+  NormalizedData,
+  NormalizationType,
 } from './types.js';
 
 // WASM module instance (lazily loaded)
@@ -43,7 +45,11 @@ export async function init(): Promise<void> {
 
           const __filename = fileURLToPath(import.meta.url);
           const __dirname = dirname(__filename);
-          const wasmPath = join(__dirname, '..', 'wasm', 'micro_ml_core_bg.wasm');
+          const { existsSync } = await import('fs');
+          // Try dist/ (npm package) then wasm/ (dev)
+          const distPath = join(__dirname, 'micro_ml_core_bg.wasm');
+          const devPath = join(__dirname, '..', 'wasm', 'micro_ml_core_bg.wasm');
+          const wasmPath = existsSync(distPath) ? distPath : devPath;
 
           mod.initSync({ module: readFileSync(wasmPath) });
         } catch {
@@ -604,4 +610,78 @@ export function residuals(actual: number[], predicted: number[]): ResidualsResul
     : resids.map(r => (r - mean) / stdDev);
 
   return { residuals: resids, mean, stdDev, standardized };
+}
+
+// ============================================================================
+// Data Normalization
+// ============================================================================
+
+/**
+ * Normalize data using min-max scaling to [0, 1] range.
+ * Returns normalized data and an inverse function to restore original scale.
+ *
+ * @example
+ * ```ts
+ * const norm = minMaxNormalize([10, 20, 30, 40, 50]);
+ * console.log(norm.data); // [0, 0.25, 0.5, 0.75, 1]
+ * console.log(norm.inverse([0.5])); // [30]
+ * ```
+ */
+export function minMaxNormalize(data: number[]): NormalizedData {
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min;
+
+  if (range === 0) {
+    return {
+      data: data.map(() => 0),
+      inverse: (normalized: number[]) => normalized.map(() => min),
+    };
+  }
+
+  return {
+    data: data.map(v => (v - min) / range),
+    inverse: (normalized: number[]) => normalized.map(v => v * range + min),
+  };
+}
+
+/**
+ * Normalize data using z-score standardization (mean=0, stddev=1).
+ * Returns normalized data and an inverse function to restore original scale.
+ *
+ * @example
+ * ```ts
+ * const norm = zScoreNormalize([10, 20, 30, 40, 50]);
+ * console.log(norm.data); // [-1.41, -0.71, 0, 0.71, 1.41]
+ * ```
+ */
+export function zScoreNormalize(data: number[]): NormalizedData {
+  const mean = data.reduce((a, b) => a + b, 0) / data.length;
+  const variance = data.reduce((sum, v) => sum + (v - mean) ** 2, 0) / data.length;
+  const stdDev = Math.sqrt(variance);
+
+  if (stdDev === 0) {
+    return {
+      data: data.map(() => 0),
+      inverse: (normalized: number[]) => normalized.map(() => mean),
+    };
+  }
+
+  return {
+    data: data.map(v => (v - mean) / stdDev),
+    inverse: (normalized: number[]) => normalized.map(v => v * stdDev + mean),
+  };
+}
+
+/**
+ * Normalize data with the specified method.
+ *
+ * @example
+ * ```ts
+ * const norm = normalize([10, 20, 30], 'min-max');
+ * const norm2 = normalize([10, 20, 30], 'z-score');
+ * ```
+ */
+export function normalize(data: number[], type: NormalizationType = 'min-max'): NormalizedData {
+  return type === 'z-score' ? zScoreNormalize(data) : minMaxNormalize(data);
 }

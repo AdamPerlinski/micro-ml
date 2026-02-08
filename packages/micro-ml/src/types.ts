@@ -173,3 +173,18 @@ export interface ResidualsResult {
   /** Standardized residuals (residual / stdDev) */
   readonly standardized: number[];
 }
+
+/**
+ * Result of data normalization, includes inverse transform
+ */
+export interface NormalizedData {
+  /** Normalized values */
+  readonly data: number[];
+  /** Inverse transform to restore original scale */
+  inverse(normalized: number[]): number[];
+}
+
+/**
+ * Type of normalization to apply
+ */
+export type NormalizationType = 'min-max' | 'z-score';
