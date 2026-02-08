@@ -1,11 +1,15 @@
-# micro-ml
+<p align="center">
+  <img src="https://raw.githubusercontent.com/AdamPerlinski/micro-ml/main/docs/logo.svg" alt="micro-ml" width="480">
+</p>
 
-[![npm version](https://img.shields.io/npm/v/micro-ml?color=cb0000)](https://www.npmjs.com/package/micro-ml)
-[![npm downloads](https://img.shields.io/npm/dm/micro-ml?color=cb0000)](https://www.npmjs.com/package/micro-ml)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/micro-ml?color=cb0000&label=size)](https://bundlephobia.com/package/micro-ml)
-[![license](https://img.shields.io/github/license/AdamPerlinski/micro-ml?color=cb0000)](https://github.com/AdamPerlinski/micro-ml/blob/main/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/AdamPerlinski/micro-ml?style=social)](https://github.com/AdamPerlinski/micro-ml)
-[![docs](https://img.shields.io/badge/docs-live%20demos-blue)](https://adamperlinski.github.io/micro-ml/)
+<p align="center">
+  <a href="https://www.npmjs.com/package/micro-ml"><img src="https://img.shields.io/npm/v/micro-ml?color=cb0000" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/micro-ml"><img src="https://img.shields.io/npm/dm/micro-ml?color=cb0000" alt="npm downloads"></a>
+  <a href="https://bundlephobia.com/package/micro-ml"><img src="https://img.shields.io/bundlephobia/minzip/micro-ml?color=cb0000&label=size" alt="bundle size"></a>
+  <a href="https://github.com/AdamPerlinski/micro-ml/blob/main/LICENSE"><img src="https://img.shields.io/github/license/AdamPerlinski/micro-ml?color=cb0000" alt="license"></a>
+  <a href="https://github.com/AdamPerlinski/micro-ml"><img src="https://img.shields.io/github/stars/AdamPerlinski/micro-ml?style=social" alt="GitHub stars"></a>
+  <a href="https://adamperlinski.github.io/micro-ml/"><img src="https://img.shields.io/badge/docs-live%20demos-blue" alt="docs"></a>
+</p>
 
 **You don't need TensorFlow.js for a trendline.**
 
