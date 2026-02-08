@@ -329,6 +329,12 @@ ml.terminate();
 
 ---
 
+## Links
+
+- [Documentation & Live Demos](https://adamperlinski.github.io/micro-ml/)
+- [npm package](https://www.npmjs.com/package/micro-ml)
+- [GitHub](https://github.com/AdamPerlinski/micro-ml)
+
 ## License
 
 MIT

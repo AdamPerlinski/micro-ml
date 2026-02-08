@@ -494,8 +494,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script type="module">
-    // After npm publish, change to: https://esm.sh/micro-ml
-    import * as microml from '../packages/micro-ml/dist/index.js';
+    import * as microml from 'https://esm.sh/micro-ml';
 
     // Make it globally available
     window.ml = microml;
