@@ -8,7 +8,10 @@
   <a href="https://bundlephobia.com/package/micro-ml"><img src="https://img.shields.io/bundlephobia/minzip/micro-ml?color=cb0000&label=size" alt="bundle size"></a>
   <a href="https://github.com/AdamPerlinski/micro-ml/blob/main/LICENSE"><img src="https://img.shields.io/github/license/AdamPerlinski/micro-ml?color=cb0000" alt="license"></a>
   <a href="https://github.com/AdamPerlinski/micro-ml"><img src="https://img.shields.io/github/stars/AdamPerlinski/micro-ml?style=social" alt="GitHub stars"></a>
-  <a href="https://adamperlinski.github.io/micro-ml/"><img src="https://img.shields.io/badge/docs-live%20demos-blue" alt="docs"></a>
+</p>
+
+<p align="center">
+  <a href="https://adamperlinski.github.io/micro-ml/"><img src="https://img.shields.io/badge/%E2%96%B6%20Live%20Docs%20%26%20Demos-Visit%20Site-6366f1?style=for-the-badge&logoColor=white" alt="Live Docs & Demos"></a>
 </p>
 
 **You don't need TensorFlow.js for a trendline.**
