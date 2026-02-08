@@ -1,5 +1,12 @@
 # micro-ml
 
+[![npm version](https://img.shields.io/npm/v/micro-ml?color=cb0000)](https://www.npmjs.com/package/micro-ml)
+[![npm downloads](https://img.shields.io/npm/dm/micro-ml?color=cb0000)](https://www.npmjs.com/package/micro-ml)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/micro-ml?color=cb0000&label=size)](https://bundlephobia.com/package/micro-ml)
+[![license](https://img.shields.io/github/license/AdamPerlinski/micro-ml?color=cb0000)](https://github.com/AdamPerlinski/micro-ml/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/AdamPerlinski/micro-ml?style=social)](https://github.com/AdamPerlinski/micro-ml)
+[![docs](https://img.shields.io/badge/docs-live%20demos-blue)](https://adamperlinski.github.io/micro-ml/)
+
 **You don't need TensorFlow.js for a trendline.**
 
 Most apps just need simple predictions: forecast next month's sales, add a trendline to a chart, smooth noisy sensor data. You don't need a 500KB neural network library for that.
