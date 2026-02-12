@@ -29,6 +29,17 @@ import {
   minMaxNormalize,
   zScoreNormalize,
   normalize,
+  kmeans,
+  knnClassifier,
+  logisticRegression,
+  dbscan,
+  naiveBayes,
+  decisionTree,
+  pca,
+  perceptron,
+  seasonalDecompose,
+  autocorrelation,
+  detectSeasonality,
 } from './index.js';
 
 // Helper for approximate equality
@@ -664,3 +675,278 @@ function variance(data: number[]): number {
   const mean = data.reduce((a, b) => a + b, 0) / data.length;
   return data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.length;
 }
+
+// ============================================================================
+// K-Means Clustering
+// ============================================================================
+
+describe('kmeans', () => {
+  it('finds two clusters in separated data', async () => {
+    const data = [
+      [0, 0], [0.1, 0.1], [0.2, 0],
+      [5, 5], [5.1, 5.1], [4.9, 5],
+    ];
+    const model = await kmeans(data, { k: 2 });
+    expect(model.k).toBe(2);
+    const assignments = model.getAssignments();
+    expect(assignments).toHaveLength(6);
+    expect(assignments[0]).toBe(assignments[1]);
+    expect(assignments[0]).toBe(assignments[2]);
+    expect(assignments[3]).toBe(assignments[4]);
+    expect(assignments[0]).not.toBe(assignments[3]);
+  });
+
+  it('predicts cluster for new points', async () => {
+    const data = [
+      [0, 0], [0.1, 0.1],
+      [5, 5], [5.1, 5.1],
+    ];
+    const model = await kmeans(data, { k: 2 });
+    const preds = model.predict([[0.05, 0.05], [4.95, 4.95]]);
+    expect(preds).toHaveLength(2);
+    expect(preds[0]).not.toBe(preds[1]);
+  });
+
+  it('returns centroids', async () => {
+    const data = [[0, 0], [2, 2]];
+    const model = await kmeans(data, { k: 2 });
+    const centroids = model.getCentroids();
+    expect(centroids).toHaveLength(2);
+    expect(centroids[0]).toHaveLength(2);
+  });
+});
+
+// ============================================================================
+// K-Nearest Neighbors
+// ============================================================================
+
+describe('knnClassifier', () => {
+  it('classifies clearly separated data', async () => {
+    const data = [
+      [0, 0], [0.1, 0.1], [0.2, 0],
+      [5, 5], [5.1, 5.1], [4.9, 5],
+    ];
+    const labels = [0, 0, 0, 1, 1, 1];
+    const model = await knnClassifier(data, labels, { k: 3 });
+    const preds = model.predict([[0.05, 0.05], [4.95, 4.95]]);
+    expect(preds).toEqual([0, 1]);
+  });
+
+  it('returns probabilities', async () => {
+    const data = [[0, 0], [1, 1], [2, 2]];
+    const labels = [0, 1, 1];
+    const model = await knnClassifier(data, labels, { k: 3 });
+    const proba = model.predictProba([[1, 1]]);
+    expect(proba[0]).toBeGreaterThan(0);
+    expect(proba[0]).toBeLessThanOrEqual(1);
+  });
+});
+
+// ============================================================================
+// Logistic Regression
+// ============================================================================
+
+describe('logisticRegression', () => {
+  it('classifies linearly separable data', async () => {
+    const data = [
+      [0, 0], [0.5, 0.5], [1, 0],
+      [5, 5], [5.5, 5.5], [6, 5],
+    ];
+    const labels = [0, 0, 0, 1, 1, 1];
+    const model = await logisticRegression(data, labels, { learningRate: 0.1, maxIterations: 1000 });
+    const preds = model.predict(data);
+    expect(preds).toEqual([0, 0, 0, 1, 1, 1]);
+  });
+
+  it('returns probabilities', async () => {
+    const data = [[0], [5]];
+    const labels = [0, 1];
+    const model = await logisticRegression(data, labels, { learningRate: 0.5, maxIterations: 1000 });
+    const proba = model.predictProba(data);
+    expect(proba[0]).toBeLessThan(0.5);
+    expect(proba[1]).toBeGreaterThan(0.5);
+  });
+});
+
+// ============================================================================
+// DBSCAN
+// ============================================================================
+
+describe('dbscan', () => {
+  it('finds two clusters', async () => {
+    const data = [
+      [0, 0], [0.1, 0.1], [0.2, 0],
+      [5, 5], [5.1, 5.1], [4.9, 5],
+    ];
+    const result = await dbscan(data, { eps: 0.5, minPoints: 2 });
+    expect(result.nClusters).toBe(2);
+    expect(result.nNoise).toBe(0);
+    const labels = result.getLabels();
+    expect(labels[0]).toBe(labels[1]);
+    expect(labels[0]).not.toBe(labels[3]);
+  });
+
+  it('detects noise', async () => {
+    const data = [[0, 0], [5, 5], [10, 10]];
+    const result = await dbscan(data, { eps: 0.1, minPoints: 2 });
+    expect(result.nClusters).toBe(0);
+    expect(result.nNoise).toBe(3);
+  });
+});
+
+// ============================================================================
+// Naive Bayes
+// ============================================================================
+
+describe('naiveBayes', () => {
+  it('classifies Gaussian clusters', async () => {
+    const data = [
+      [0.1, 0.2], [-0.1, 0.1], [0.2, -0.1],
+      [5.1, 5.2], [4.9, 5.1], [5.2, 4.9],
+    ];
+    const labels = [0, 0, 0, 1, 1, 1];
+    const model = await naiveBayes(data, labels);
+    const preds = model.predict([[0, 0], [5, 5]]);
+    expect(preds).toEqual([0, 1]);
+  });
+
+  it('returns class probabilities', async () => {
+    const data = [[0, 0], [0.1, 0.1], [5, 5], [5.1, 5.1]];
+    const labels = [0, 0, 1, 1];
+    const model = await naiveBayes(data, labels);
+    const proba = model.predictProba([[0, 0]]);
+    expect(proba).toHaveLength(1);
+    expect(proba[0]).toHaveLength(2);
+    expect(proba[0][0]).toBeGreaterThan(proba[0][1]);
+  });
+});
+
+// ============================================================================
+// Decision Tree
+// ============================================================================
+
+describe('decisionTree', () => {
+  it('classifies data', async () => {
+    const data = [[0, 0], [1, 0], [0, 1], [1, 1]];
+    const labels = [0, 1, 0, 1]; // class depends on feature 0
+    const model = await decisionTree(data, labels);
+    const preds = model.predict(data);
+    expect(preds).toEqual([0, 1, 0, 1]);
+  });
+
+  it('respects maxDepth', async () => {
+    const data = [[0], [1], [2], [3], [4], [5], [6], [7]];
+    const labels = [0, 0, 1, 1, 0, 0, 1, 1];
+    const model = await decisionTree(data, labels, { maxDepth: 1 });
+    expect(model.depth).toBeLessThanOrEqual(1);
+  });
+
+  it('works in regression mode', async () => {
+    const data = [[1], [2], [3], [4], [5]];
+    const targets = [2, 4, 6, 8, 10];
+    const model = await decisionTree(data, targets, { mode: 'regress' });
+    const preds = model.predict(data);
+    expect(preds).toHaveLength(5);
+  });
+});
+
+// ============================================================================
+// PCA
+// ============================================================================
+
+describe('pca', () => {
+  it('reduces dimensionality', async () => {
+    const data = [
+      [1, 0.1], [2, 0.2], [3, 0.15], [4, 0.25], [5, 0.1],
+    ];
+    const result = await pca(data, { nComponents: 1 });
+    expect(result.nComponents).toBe(1);
+    const transformed = result.getTransformed();
+    expect(transformed).toHaveLength(5);
+    expect(transformed[0]).toHaveLength(1);
+  });
+
+  it('first component captures most variance', async () => {
+    const data = [
+      [1, 0.1], [2, 0.2], [3, 0.15], [4, 0.25], [5, 0.1],
+    ];
+    const result = await pca(data, { nComponents: 1 });
+    const ratio = result.getExplainedVarianceRatio();
+    expect(ratio[0]).toBeGreaterThan(0.9);
+  });
+
+  it('transforms new data', async () => {
+    const data = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+    const result = await pca(data, { nComponents: 2 });
+    const proj = result.transform([[1, 0]]);
+    expect(proj).toHaveLength(1);
+    expect(proj[0]).toHaveLength(2);
+  });
+});
+
+// ============================================================================
+// Perceptron
+// ============================================================================
+
+describe('perceptron', () => {
+  it('converges on linearly separable data', async () => {
+    const data = [
+      [0, 0], [0.5, 0.5], [1, 0],
+      [3, 3], [3.5, 3.5], [4, 3],
+    ];
+    const labels = [0, 0, 0, 1, 1, 1];
+    const model = await perceptron(data, labels, { learningRate: 0.1, maxIterations: 1000 });
+    expect(model.converged).toBe(true);
+    const preds = model.predict(data);
+    expect(preds).toEqual([0, 0, 0, 1, 1, 1]);
+  });
+
+  it('returns weights', async () => {
+    const data = [[0, 0], [1, 1]];
+    const labels = [0, 1];
+    const model = await perceptron(data, labels);
+    expect(model.getWeights()).toHaveLength(2);
+  });
+});
+
+// ============================================================================
+// Seasonality
+// ============================================================================
+
+describe('seasonalDecompose', () => {
+  it('decomposes seasonal data', async () => {
+    const base = [10, 20, 15, 25];
+    const data: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      for (const v of base) data.push(v + i * 2);
+    }
+    const result = await seasonalDecompose(data, 4);
+    expect(result.period).toBe(4);
+    expect(result.getTrend()).toHaveLength(data.length);
+    expect(result.getSeasonal()).toHaveLength(data.length);
+    expect(result.getResidual()).toHaveLength(data.length);
+    // Seasonal should repeat
+    const s = result.getSeasonal();
+    expect(s[0]).toBeCloseTo(s[4], 5);
+    expect(s[1]).toBeCloseTo(s[5], 5);
+  });
+});
+
+describe('autocorrelation', () => {
+  it('returns lag-0 as 1', async () => {
+    const data = [1, 2, 3, 4, 5, 6, 7, 8];
+    const acf = await autocorrelation(data, 3);
+    expect(acf[0]).toBeCloseTo(1, 5);
+  });
+});
+
+describe('detectSeasonality', () => {
+  it('detects weekly pattern', async () => {
+    const base = [10, 12, 15, 20, 18, 14, 11];
+    const data: number[] = [];
+    for (let r = 0; r < 8; r++) data.push(...base);
+    const info = await detectSeasonality(data);
+    expect(info.period).toBe(7);
+    expect(info.strength).toBeGreaterThan(0.5);
+  });
+});

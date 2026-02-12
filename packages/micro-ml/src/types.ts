@@ -188,3 +188,125 @@ export interface NormalizedData {
  * Type of normalization to apply
  */
 export type NormalizationType = 'min-max' | 'z-score';
+
+// ============================================================================
+// ML Algorithm Types
+// ============================================================================
+
+export interface KMeansModel {
+  readonly k: number;
+  readonly iterations: number;
+  readonly inertia: number;
+  getCentroids(): number[][];
+  getAssignments(): number[];
+  predict(data: number[][]): number[];
+  toString(): string;
+}
+
+export interface KMeansOptions {
+  k: number;
+  maxIterations?: number;
+}
+
+export interface KnnModel {
+  readonly k: number;
+  readonly nSamples: number;
+  predict(data: number[][]): number[];
+  predictProba(data: number[][]): number[];
+  toString(): string;
+}
+
+export interface KnnOptions {
+  k?: number;
+}
+
+export interface LogisticModel {
+  readonly bias: number;
+  readonly iterations: number;
+  readonly loss: number;
+  getWeights(): number[];
+  predict(data: number[][]): number[];
+  predictProba(data: number[][]): number[];
+  toString(): string;
+}
+
+export interface LogisticRegressionOptions {
+  learningRate?: number;
+  maxIterations?: number;
+  lambda?: number;
+}
+
+export interface DbscanResult {
+  readonly nClusters: number;
+  readonly nNoise: number;
+  getLabels(): number[];
+  toString(): string;
+}
+
+export interface DbscanOptions {
+  eps: number;
+  minPoints?: number;
+}
+
+export interface NaiveBayesModel {
+  readonly nClasses: number;
+  readonly nFeatures: number;
+  predict(data: number[][]): number[];
+  predictProba(data: number[][]): number[][];
+  toString(): string;
+}
+
+export interface DecisionTreeModel {
+  readonly depth: number;
+  readonly nNodes: number;
+  predict(data: number[][]): number[];
+  getTree(): number[];
+  toString(): string;
+}
+
+export interface DecisionTreeOptions {
+  maxDepth?: number;
+  minSamplesSplit?: number;
+  mode?: 'classify' | 'regress';
+}
+
+export interface PcaResult {
+  readonly nComponents: number;
+  getComponents(): number[][];
+  getExplainedVariance(): number[];
+  getExplainedVarianceRatio(): number[];
+  getTransformed(): number[][];
+  getMean(): number[];
+  transform(data: number[][]): number[][];
+  toString(): string;
+}
+
+export interface PcaOptions {
+  nComponents?: number;
+}
+
+export interface PerceptronModel {
+  readonly bias: number;
+  readonly iterations: number;
+  readonly converged: boolean;
+  getWeights(): number[];
+  predict(data: number[][]): number[];
+  toString(): string;
+}
+
+export interface PerceptronOptions {
+  learningRate?: number;
+  maxIterations?: number;
+}
+
+export interface SeasonalDecomposition {
+  readonly period: number;
+  getTrend(): number[];
+  getSeasonal(): number[];
+  getResidual(): number[];
+}
+
+export interface SeasonalityInfo {
+  readonly period: number;
+  readonly strength: number;
+}
