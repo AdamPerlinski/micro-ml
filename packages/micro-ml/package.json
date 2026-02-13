@@ -1,6 +1,6 @@
 {
   "name": "micro-ml",
-  "version": "0.2.0",
+  "version": "0.9.0",
   "description": "A tiny, blazing-fast WASM-powered machine learning library",
   "type": "module",
   "main": "./dist/index.js",

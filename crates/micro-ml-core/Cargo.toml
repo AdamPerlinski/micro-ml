@@ -1,6 +1,6 @@
 [package]
 name = "micro-ml-core"
-version = "0.2.0"
+version = "0.9.0"
 edition = "2021"
 authors = ["micro-ml contributors"]
 description = "A tiny, blazing-fast WASM-powered machine learning library"
