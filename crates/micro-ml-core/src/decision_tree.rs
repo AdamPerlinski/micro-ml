@@ -17,7 +17,6 @@ pub struct DecisionTreeModel {
     nodes: Vec<Node>,
     n_features: usize,
     depth: usize,
-    is_classifier: bool,
 }
 
 #[wasm_bindgen]
@@ -80,24 +79,6 @@ fn label_counts(labels: &[f64]) -> Vec<(u32, usize)> {
         }
     }
     counts
-}
-
-fn gini_impurity(labels: &[f64]) -> f64 {
-    if labels.is_empty() { return 0.0; }
-    let n = labels.len() as f64;
-    let counts = label_counts(labels);
-    let mut gini = 1.0;
-    for &(_, c) in &counts {
-        let p = c as f64 / n;
-        gini -= p * p;
-    }
-    gini
-}
-
-fn mse_reduction(targets: &[f64]) -> f64 {
-    if targets.is_empty() { return 0.0; }
-    let mean = targets.iter().sum::<f64>() / targets.len() as f64;
-    targets.iter().map(|&t| (t - mean).powi(2)).sum::<f64>() / targets.len() as f64
 }
 
 fn majority_class(labels: &[f64]) -> f64 {
@@ -176,38 +157,112 @@ impl<'a> TreeBuilder<'a> {
         let mut best_feature = 0;
         let mut best_threshold = 0.0;
         let mut best_score = -1.0;
+        let n = indices.len();
+        let nf = n as f64;
 
-        let parent_impurity = if self.is_classifier { gini_impurity(targets) } else { mse_reduction(targets) };
+        if self.is_classifier {
+            // Build class counts for parent
+            let counts = label_counts(targets);
+            let parent_gini = {
+                let mut g = 1.0;
+                for &(_, c) in &counts { let p = c as f64 / nf; g -= p * p; }
+                g
+            };
 
-        for f in 0..self.n_features {
-            // Get sorted unique values for this feature
-            let mut vals: Vec<f64> = indices.iter().map(|&i| mat_get(self.data, self.n_features, i, f)).collect();
-            vals.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
-            vals.dedup();
+            for f in 0..self.n_features {
+                // Sort indices by feature value
+                let mut sorted: Vec<usize> = (0..n).collect();
+                sorted.sort_unstable_by(|&a, &b| {
+                    let va = mat_get(self.data, self.n_features, indices[a], f);
+                    let vb = mat_get(self.data, self.n_features, indices[b], f);
+                    va.partial_cmp(&vb).unwrap()
+                });
 
-            for w in vals.windows(2) {
-                let threshold = (w[0] + w[1]) / 2.0;
+                // Running left counts, right counts start as parent counts
+                let mut left_counts: Vec<(u32, usize)> = counts.iter().map(|&(k, _)| (k, 0)).collect();
+                let mut right_counts = counts.clone();
+                let mut left_n = 0usize;
 
-                let (left_pairs, right_pairs): (Vec<(f64, f64)>, Vec<(f64, f64)>) = indices.iter()
-                    .map(|&i| (mat_get(self.data, self.n_features, i, f), self.targets[i]))
-                    .partition(|&(v, _)| v <= threshold);
+                for si in 0..n - 1 {
+                    let idx = sorted[si];
+                    let label = targets[idx] as u32;
 
-                let left_targets: Vec<f64> = left_pairs.iter().map(|&(_, t)| t).collect();
-                let right_targets: Vec<f64> = right_pairs.iter().map(|&(_, t)| t).collect();
+                    // Move sample from right to left
+                    for entry in left_counts.iter_mut() { if entry.0 == label { entry.1 += 1; break; } }
+                    for entry in right_counts.iter_mut() { if entry.0 == label { entry.1 -= 1; break; } }
+                    left_n += 1;
+                    let right_n = n - left_n;
 
-                if left_targets.is_empty() || right_targets.is_empty() { continue; }
+                    // Skip if same feature value as next
+                    let v_cur = mat_get(self.data, self.n_features, indices[sorted[si]], f);
+                    let v_next = mat_get(self.data, self.n_features, indices[sorted[si + 1]], f);
+                    if (v_cur - v_next).abs() < 1e-12 { continue; }
 
-                let n = indices.len() as f64;
-                let left_imp = if self.is_classifier { gini_impurity(&left_targets) } else { mse_reduction(&left_targets) };
-                let right_imp = if self.is_classifier { gini_impurity(&right_targets) } else { mse_reduction(&right_targets) };
+                    // Compute Gini from counts
+                    let left_gini = {
+                        let mut g = 1.0;
+                        let ln = left_n as f64;
+                        for &(_, c) in &left_counts { if c > 0 { let p = c as f64 / ln; g -= p * p; } }
+                        g
+                    };
+                    let right_gini = {
+                        let mut g = 1.0;
+                        let rn = right_n as f64;
+                        for &(_, c) in &right_counts { if c > 0 { let p = c as f64 / rn; g -= p * p; } }
+                        g
+                    };
 
-                let weighted = (left_targets.len() as f64 / n) * left_imp + (right_targets.len() as f64 / n) * right_imp;
-                let gain = parent_impurity - weighted;
+                    let weighted = (left_n as f64 / nf) * left_gini + (right_n as f64 / nf) * right_gini;
+                    let gain = parent_gini - weighted;
 
-                if gain > best_score {
-                    best_score = gain;
-                    best_feature = f;
-                    best_threshold = threshold;
+                    if gain > best_score {
+                        best_score = gain;
+                        best_feature = f;
+                        best_threshold = (v_cur + v_next) / 2.0;
+                    }
+                }
+            }
+        } else {
+            // Regression: use running sums for MSE
+            let total_sum: f64 = targets.iter().sum();
+            let total_sq: f64 = targets.iter().map(|&t| t * t).sum();
+            let parent_mse = total_sq / nf - (total_sum / nf).powi(2);
+
+            for f in 0..self.n_features {
+                let mut sorted: Vec<usize> = (0..n).collect();
+                sorted.sort_unstable_by(|&a, &b| {
+                    let va = mat_get(self.data, self.n_features, indices[a], f);
+                    let vb = mat_get(self.data, self.n_features, indices[b], f);
+                    va.partial_cmp(&vb).unwrap()
+                });
+
+                let mut left_sum = 0.0;
+                let mut left_sq = 0.0;
+
+                for si in 0..n - 1 {
+                    let t = targets[sorted[si]];
+                    left_sum += t;
+                    left_sq += t * t;
+                    let left_n = (si + 1) as f64;
+                    let right_n = (n - si - 1) as f64;
+
+                    let v_cur = mat_get(self.data, self.n_features, indices[sorted[si]], f);
+                    let v_next = mat_get(self.data, self.n_features, indices[sorted[si + 1]], f);
+                    if (v_cur - v_next).abs() < 1e-12 { continue; }
+
+                    let right_sum = total_sum - left_sum;
+                    let right_sq = total_sq - left_sq;
+                    let left_mse = left_sq / left_n - (left_sum / left_n).powi(2);
+                    let right_mse = right_sq / right_n - (right_sum / right_n).powi(2);
+
+                    let weighted = (left_n / nf) * left_mse + (right_n / nf) * right_mse;
+                    let gain = parent_mse - weighted;
+
+                    if gain > best_score {
+                        best_score = gain;
+                        best_feature = f;
+                        best_threshold = (v_cur + v_next) / 2.0;
+                    }
                 }
             }
         }
@@ -236,7 +291,6 @@ pub fn decision_tree_impl(data: &[f64], n_features: usize, targets: &[f64], max_
         nodes: builder.nodes,
         n_features,
         depth: builder.max_depth_reached,
-        is_classifier,
     })
 }
 

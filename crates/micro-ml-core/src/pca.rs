@@ -11,7 +11,6 @@ pub struct PcaResult {
     explained_variance_ratio: Vec<f64>,
     mean: Vec<f64>,
     transformed: Vec<f64>,
-    n_samples: usize,
 }
 
 #[wasm_bindgen]
@@ -139,7 +138,7 @@ pub fn pca_impl(data: &[f64], n_features: usize, n_components: usize) -> Result<
         n_components, n_features, components,
         explained_variance: eigenvalues,
         explained_variance_ratio,
-        mean, transformed, n_samples: n,
+        mean, transformed,
     })
 }
 

@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use crate::error::MlError;
-use crate::matrix::{validate_matrix, euclidean_dist};
+use crate::matrix::{validate_matrix, euclidean_dist_sq};
 
 #[wasm_bindgen]
 pub struct DbscanResult {
@@ -32,41 +32,39 @@ pub fn dbscan_impl(data: &[f64], n_features: usize, eps: f64, min_points: usize)
         return Err(MlError::new("eps must be > 0"));
     }
 
+    let eps_sq = eps * eps;
     let mut labels = vec![-1i32; n]; // -1 = unvisited/noise
     let mut cluster_id: i32 = 0;
 
     for i in 0..n {
         if labels[i] != -1 { continue; }
 
-        // Find neighbors
-        let neighbors = range_query(data, n_features, n, i, eps);
+        let neighbors = range_query(data, n_features, n, i, eps_sq);
 
         if neighbors.len() < min_points {
-            // Stays as noise (-1) for now, might be claimed by a cluster later
-            continue;
+            continue; // noise
         }
 
-        // Start new cluster
+        // Start new cluster — mark seed + neighbors immediately
         labels[i] = cluster_id;
-        let mut queue = neighbors;
-        let mut qi = 0;
+        let mut queue: Vec<usize> = Vec::new();
+        for &nb in &neighbors {
+            if labels[nb] == -1 {
+                labels[nb] = cluster_id;
+                queue.push(nb);
+            }
+        }
 
+        let mut qi = 0;
         while qi < queue.len() {
             let q = queue[qi];
             qi += 1;
 
-            if labels[q] == -1 {
-                labels[q] = cluster_id; // Claim noise point
-            }
-            if labels[q] != -1 && labels[q] != cluster_id {
-                continue; // Already in another cluster (shouldn't happen with -1 init, but safe)
-            }
-            labels[q] = cluster_id;
-
-            let q_neighbors = range_query(data, n_features, n, q, eps);
+            let q_neighbors = range_query(data, n_features, n, q, eps_sq);
             if q_neighbors.len() >= min_points {
                 for &nn in &q_neighbors {
                     if labels[nn] == -1 {
+                        labels[nn] = cluster_id;
                         queue.push(nn);
                     }
                 }
@@ -82,10 +80,11 @@ pub fn dbscan_impl(data: &[f64], n_features: usize, eps: f64, min_points: usize)
     Ok(DbscanResult { labels, n_clusters, n_noise })
 }
 
-fn range_query(data: &[f64], n_features: usize, n: usize, point: usize, eps: f64) -> Vec<usize> {
+/// Range query using squared distance (avoids sqrt)
+fn range_query(data: &[f64], n_features: usize, n: usize, point: usize, eps_sq: f64) -> Vec<usize> {
     let mut neighbors = Vec::new();
     for j in 0..n {
-        if euclidean_dist(data, n_features, point, j) <= eps {
+        if euclidean_dist_sq(data, n_features, point, j) <= eps_sq {
             neighbors.push(j);
         }
     }

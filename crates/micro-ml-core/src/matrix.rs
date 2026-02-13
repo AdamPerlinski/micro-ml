@@ -20,14 +20,15 @@ pub fn mat_get(data: &[f64], n_features: usize, row: usize, col: usize) -> f64 {
     data[row * n_features + col]
 }
 
-/// Euclidean distance between two rows
-pub fn euclidean_dist(data: &[f64], n_features: usize, a: usize, b: usize) -> f64 {
+/// Squared Euclidean distance between two rows (avoids sqrt)
+#[inline]
+pub fn euclidean_dist_sq(data: &[f64], n_features: usize, a: usize, b: usize) -> f64 {
     let mut sum = 0.0;
     for j in 0..n_features {
         let d = mat_get(data, n_features, a, j) - mat_get(data, n_features, b, j);
         sum += d * d;
     }
-    sum.sqrt()
+    sum
 }
 
 /// Euclidean distance between a row and a point
@@ -92,9 +93,9 @@ mod tests {
     }
 
     #[test]
-    fn test_euclidean_dist() {
+    fn test_euclidean_dist_sq() {
         let data = vec![0.0, 0.0, 3.0, 4.0];
-        assert!((euclidean_dist(&data, 2, 0, 1) - 5.0).abs() < 1e-10);
+        assert!((euclidean_dist_sq(&data, 2, 0, 1) - 25.0).abs() < 1e-10);
     }
 
     #[test]
