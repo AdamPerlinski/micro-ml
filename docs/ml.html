@@ -330,9 +330,6 @@ d.<span class="fn">getTrend</span>(); d.<span class="fn">getSeasonal</span>(); d
   </footer>
 
   <script type="module">
-    import * as ml from 'https://esm.sh/micro-ml';
-    window.ml = ml;
-
     // ── Palette ──
     const C = ['#3b82f6','#ef4444','#4ade80','#f59e0b','#a78bfa','#f472b6','#06b6d4','#fb923c'];
     const CA = i => C[i % C.length];
@@ -372,17 +369,20 @@ d.<span class="fn">getTrend</span>(); d.<span class="fn">getSeasonal</span>(); d
     // ── State ──
     const S = { km:{}, knn:{}, lr:{}, db:{}, dt:{}, pca:{}, pt:{}, ss:{} };
 
-    // ── Init ──
+    // ── Load library (dynamic import so function defs always run) ──
+    let ml = null;
     try {
+      ml = await import('https://esm.sh/micro-ml@0.9.0');
+      window.ml = ml;
       const t0 = performance.now();
       await ml.init();
       const t = (performance.now()-t0).toFixed(1);
       document.getElementById('status').textContent = `WASM loaded in ${t}ms`;
       document.getElementById('status').className = 'status-bar ready';
-      // Auto-generate all
-      kmGenerate(); knnGenerate(); lrGenerate(); dbGenerate(); dtGenerate(); pcaGenerate(); ptGenerate(); ssGenerate();
+      // Auto-generate all demos
+      setTimeout(() => { kmGenerate(); knnGenerate(); lrGenerate(); dbGenerate(); dtGenerate(); pcaGenerate(); ptGenerate(); ssGenerate(); }, 0);
     } catch(e) {
-      document.getElementById('status').textContent = 'Error: '+e.message;
+      document.getElementById('status').textContent = 'Error loading micro-ml: '+e.message;
       document.getElementById('status').style.color = '#f87171';
     }
 
