@@ -14,6 +14,23 @@ import type {
   ResidualsResult,
   NormalizedData,
   NormalizationType,
+  KMeansModel,
+  KMeansOptions,
+  KnnModel,
+  KnnOptions,
+  LogisticModel,
+  LogisticRegressionOptions,
+  DbscanResult,
+  DbscanOptions,
+  NaiveBayesModel,
+  DecisionTreeModel,
+  DecisionTreeOptions,
+  PcaResult,
+  PcaOptions,
+  PerceptronModel,
+  PerceptronOptions,
+  SeasonalDecomposition,
+  SeasonalityInfo,
 } from './types.js';
 
 // WASM module instance (lazily loaded)
@@ -684,4 +701,291 @@ export function zScoreNormalize(data: number[]): NormalizedData {
  */
 export function normalize(data: number[], type: NormalizationType = 'min-max'): NormalizedData {
   return type === 'z-score' ? zScoreNormalize(data) : minMaxNormalize(data);
+}
+
+// ============================================================================
+// Matrix helpers (internal)
+// ============================================================================
+
+function flattenMatrix(matrix: number[][]): { flat: Float64Array; nFeatures: number } {
+  const nFeatures = matrix[0].length;
+  const flat = new Float64Array(matrix.length * nFeatures);
+  for (let i = 0; i < matrix.length; i++) {
+    for (let j = 0; j < nFeatures; j++) {
+      flat[i * nFeatures + j] = matrix[i][j];
+    }
+  }
+  return { flat, nFeatures };
+}
+
+function unflattenMatrix(flat: ArrayLike<number>, nFeatures: number): number[][] {
+  const n = flat.length / nFeatures;
+  const result: number[][] = [];
+  for (let i = 0; i < n; i++) {
+    const row: number[] = [];
+    for (let j = 0; j < nFeatures; j++) {
+      row.push(flat[i * nFeatures + j]);
+    }
+    result.push(row);
+  }
+  return result;
+}
+
+// ============================================================================
+// K-Means Clustering
+// ============================================================================
+
+export async function kmeans(
+  data: number[][],
+  options: KMeansOptions
+): Promise<KMeansModel> {
+  const wasm = await ensureInit();
+  const { flat, nFeatures } = flattenMatrix(data);
+  const maxIter = options.maxIterations ?? 100;
+  const model = wasm.kmeans(flat, nFeatures, options.k, maxIter);
+  return {
+    get k() { return model.k; },
+    get iterations() { return model.iterations; },
+    get inertia() { return model.inertia; },
+    getCentroids() { return unflattenMatrix(model.getCentroids(), model.getNFeatures()); },
+    getAssignments() { return Array.from(model.getAssignments()); },
+    predict(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      return Array.from(model.predict(f));
+    },
+    toString() { return model.toString(); },
+  };
+}
+
+// ============================================================================
+// K-Nearest Neighbors
+// ============================================================================
+
+export async function knnClassifier(
+  data: number[][],
+  labels: number[],
+  options: KnnOptions = {}
+): Promise<KnnModel> {
+  const wasm = await ensureInit();
+  const { flat, nFeatures } = flattenMatrix(data);
+  const k = options.k ?? 3;
+  const model = wasm.knnFit(flat, nFeatures, new Float64Array(labels), k);
+  return {
+    get k() { return model.k; },
+    get nSamples() { return model.nSamples; },
+    predict(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      return Array.from(model.predict(f));
+    },
+    predictProba(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      return Array.from(model.predictProba(f));
+    },
+    toString() { return model.toString(); },
+  };
+}
+
+// ============================================================================
+// Logistic Regression
+// ============================================================================
+
+export async function logisticRegression(
+  data: number[][],
+  labels: number[],
+  options: LogisticRegressionOptions = {}
+): Promise<LogisticModel> {
+  const wasm = await ensureInit();
+  const { flat, nFeatures } = flattenMatrix(data);
+  const lr = options.learningRate ?? 0.01;
+  const maxIter = options.maxIterations ?? 1000;
+  const lambda = options.lambda ?? 0.0;
+  const model = wasm.logisticRegression(flat, nFeatures, new Float64Array(labels), lr, maxIter, lambda);
+  return {
+    get bias() { return model.bias; },
+    get iterations() { return model.iterations; },
+    get loss() { return model.loss; },
+    getWeights() { return Array.from(model.getWeights()); },
+    predict(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      return Array.from(model.predict(f));
+    },
+    predictProba(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      return Array.from(model.predictProba(f));
+    },
+    toString() { return model.toString(); },
+  };
+}
+
+// ============================================================================
+// DBSCAN
+// ============================================================================
+
+export async function dbscan(
+  data: number[][],
+  options: DbscanOptions
+): Promise<DbscanResult> {
+  const wasm = await ensureInit();
+  const { flat, nFeatures } = flattenMatrix(data);
+  const minPoints = options.minPoints ?? 5;
+  const result = wasm.dbscan(flat, nFeatures, options.eps, minPoints);
+  return {
+    get nClusters() { return result.nClusters; },
+    get nNoise() { return result.nNoise; },
+    getLabels() { return Array.from(result.getLabels()); },
+    toString() { return result.toString(); },
+  };
+}
+
+// ============================================================================
+// Naive Bayes
+// ============================================================================
+
+export async function naiveBayes(
+  data: number[][],
+  labels: number[]
+): Promise<NaiveBayesModel> {
+  const wasm = await ensureInit();
+  const { flat, nFeatures } = flattenMatrix(data);
+  const model = wasm.naiveBayesFit(flat, nFeatures, new Float64Array(labels));
+  return {
+    get nClasses() { return model.nClasses; },
+    get nFeatures() { return model.nFeatures; },
+    predict(d: number[][]) {
+      const { flat: f, nFeatures: nf } = flattenMatrix(d);
+      return Array.from(model.predict(f));
+    },
+    predictProba(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      const flatProba = Array.from(model.predictProba(f));
+      const nClasses = model.nClasses;
+      const result: number[][] = [];
+      for (let i = 0; i < d.length; i++) {
+        result.push(flatProba.slice(i * nClasses, (i + 1) * nClasses));
+      }
+      return result;
+    },
+    toString() { return model.toString(); },
+  };
+}
+
+// ============================================================================
+// Decision Tree
+// ============================================================================
+
+export async function decisionTree(
+  data: number[][],
+  targets: number[],
+  options: DecisionTreeOptions = {}
+): Promise<DecisionTreeModel> {
+  const wasm = await ensureInit();
+  const { flat, nFeatures } = flattenMatrix(data);
+  const maxDepth = options.maxDepth ?? 10;
+  const minSplit = options.minSamplesSplit ?? 2;
+  const mode = options.mode ?? 'classify';
+  const model = mode === 'regress'
+    ? wasm.decisionTreeRegress(flat, nFeatures, new Float64Array(targets), maxDepth, minSplit)
+    : wasm.decisionTreeClassify(flat, nFeatures, new Float64Array(targets), maxDepth, minSplit);
+  return {
+    get depth() { return model.depth; },
+    get nNodes() { return model.nNodes; },
+    predict(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      return Array.from(model.predict(f));
+    },
+    getTree() { return Array.from(model.getTree()); },
+    toString() { return model.toString(); },
+  };
+}
+
+// ============================================================================
+// PCA
+// ============================================================================
+
+export async function pca(
+  data: number[][],
+  options: PcaOptions = {}
+): Promise<PcaResult> {
+  const wasm = await ensureInit();
+  const { flat, nFeatures } = flattenMatrix(data);
+  const nComponents = options.nComponents ?? Math.min(nFeatures, data.length, 2);
+  const result = wasm.pca(flat, nFeatures, nComponents);
+  return {
+    get nComponents() { return result.nComponents; },
+    getComponents() { return unflattenMatrix(result.getComponents(), nFeatures); },
+    getExplainedVariance() { return Array.from(result.getExplainedVariance()); },
+    getExplainedVarianceRatio() { return Array.from(result.getExplainedVarianceRatio()); },
+    getTransformed() { return unflattenMatrix(result.getTransformed(), nComponents); },
+    getMean() { return Array.from(result.getMean()); },
+    transform(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      return unflattenMatrix(result.transform(f), nComponents);
+    },
+    toString() { return result.toString(); },
+  };
+}
+
+// ============================================================================
+// Perceptron
+// ============================================================================
+
+export async function perceptron(
+  data: number[][],
+  labels: number[],
+  options: PerceptronOptions = {}
+): Promise<PerceptronModel> {
+  const wasm = await ensureInit();
+  const { flat, nFeatures } = flattenMatrix(data);
+  const lr = options.learningRate ?? 0.01;
+  const maxIter = options.maxIterations ?? 1000;
+  const model = wasm.perceptron(flat, nFeatures, new Float64Array(labels), lr, maxIter);
+  return {
+    get bias() { return model.bias; },
+    get iterations() { return model.iterations; },
+    get converged() { return model.converged; },
+    getWeights() { return Array.from(model.getWeights()); },
+    predict(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      return Array.from(model.predict(f));
+    },
+    toString() { return model.toString(); },
+  };
+}
+
+// ============================================================================
+// Seasonality
+// ============================================================================
+
+export async function seasonalDecompose(
+  data: number[],
+  period: number
+): Promise<SeasonalDecomposition> {
+  const wasm = await ensureInit();
+  const result = wasm.seasonalDecompose(new Float64Array(data), period);
+  return {
+    get period() { return result.period; },
+    getTrend() { return Array.from(result.getTrend()); },
+    getSeasonal() { return Array.from(result.getSeasonal()); },
+    getResidual() { return Array.from(result.getResidual()); },
+  };
+}
+
+export async function autocorrelation(
+  data: number[],
+  maxLag?: number
+): Promise<number[]> {
+  const wasm = await ensureInit();
+  const lag = maxLag ?? Math.floor(data.length / 2);
+  return Array.from(wasm.autocorrelation(new Float64Array(data), lag));
+}
+
+export async function detectSeasonality(
+  data: number[]
+): Promise<SeasonalityInfo> {
+  const wasm = await ensureInit();
+  const result = wasm.detectSeasonality(new Float64Array(data));
+  return {
+    get period() { return result.period; },
+    get strength() { return result.strength; },
+  };
 }

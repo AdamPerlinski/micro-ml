@@ -1,9 +1,8 @@
 use wasm_bindgen::prelude::*;
-use serde::{Deserialize, Serialize};
 use crate::error::MlError;
 
 /// Result of a polynomial regression fit: y = c0 + c1*x + c2*x² + ...
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 #[wasm_bindgen]
 pub struct PolynomialModel {
     coefficients: Vec<f64>,
