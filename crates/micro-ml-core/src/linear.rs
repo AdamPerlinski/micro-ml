@@ -1,9 +1,8 @@
 use wasm_bindgen::prelude::*;
-use serde::{Deserialize, Serialize};
 use crate::error::MlError;
 
 /// Result of a linear regression fit: y = slope * x + intercept
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 #[wasm_bindgen]
 pub struct LinearModel {
     slope: f64,

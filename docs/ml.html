@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>micro-ml - Interactive ML Demos</title>
+  <meta name="description" content="Interactive demos for micro-ml's machine learning algorithms: k-Means, kNN, DBSCAN, Decision Tree, Logistic Regression, PCA, Perceptron, and Seasonality.">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f172a;color:#e2e8f0;line-height:1.6}
+    a{color:#60a5fa;text-decoration:none}a:hover{text-decoration:underline}
+
+    nav{display:flex;justify-content:center;gap:20px;padding:14px 20px;background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;flex-wrap:wrap}
+    nav a{color:#94a3b8;font-size:.9rem;white-space:nowrap}nav a:hover{color:#f8fafc;text-decoration:none}
+    nav a.active{color:#60a5fa}
+
+    .status-bar{text-align:center;padding:8px;background:#1e293b;font-size:.85rem}
+    .status-bar.ready{color:#4ade80}.status-bar.loading{color:#f59e0b}
+
+    .hero{text-align:center;padding:50px 20px 40px;background:linear-gradient(180deg,#1e3a5f 0%,#0f172a 100%)}
+    .hero h1{font-size:2.8rem;margin-bottom:8px;background:linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero p{color:#94a3b8;font-size:1.1rem}
+
+    .container{max-width:1100px;margin:0 auto;padding:40px 20px}
+
+    /* Demo Card */
+    .demo-card{background:#1e293b;border-radius:16px;border:1px solid #334155;margin-bottom:40px;overflow:hidden;transition:border-color .3s}
+    .demo-card:hover{border-color:#475569}
+    .demo-card-head{padding:20px 24px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    .demo-card-head h2{font-size:1.3rem;color:#f8fafc;display:flex;align-items:center;gap:10px}
+    .demo-card-head .tag{font-size:.7rem;padding:3px 10px;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+    .tag-cluster{background:#3b82f620;color:#60a5fa;border:1px solid #3b82f640}
+    .tag-classify{background:#a78bfa20;color:#a78bfa;border:1px solid #a78bfa40}
+    .tag-transform{background:#f472b620;color:#f472b6;border:1px solid #f472b640}
+    .tag-timeseries{background:#4ade8020;color:#4ade80;border:1px solid #4ade8040}
+
+    .demo-card-body{display:grid;grid-template-columns:1fr 300px;gap:0}
+    @media(max-width:800px){.demo-card-body{grid-template-columns:1fr}}
+
+    .demo-viz{padding:20px;position:relative;min-height:320px}
+    .demo-viz canvas{width:100%!important;height:280px!important}
+
+    .demo-controls{padding:20px;background:#0f172a;border-left:1px solid #334155;display:flex;flex-direction:column;gap:12px}
+    @media(max-width:800px){.demo-controls{border-left:none;border-top:1px solid #334155}}
+
+    .demo-controls label{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;color:#94a3b8}
+    .demo-controls label span{color:#60a5fa;font-family:monospace;font-weight:600;min-width:30px;text-align:right}
+    .demo-controls input[type=range]{width:100%;accent-color:#60a5fa;margin-top:4px}
+    .ctrl-group{display:flex;flex-direction:column;gap:4px}
+
+    .btn-run{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;border:none;padding:12px;border-radius:8px;font-size:.9rem;cursor:pointer;font-weight:600;transition:transform .15s}
+    .btn-run:hover{transform:translateY(-1px)}
+    .btn-run:active{transform:translateY(0)}
+    .btn-run:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+    .btn-gen{background:#334155;color:#e2e8f0;border:none;padding:10px;border-radius:8px;font-size:.85rem;cursor:pointer;transition:background .2s}
+    .btn-gen:hover{background:#475569}
+
+    .demo-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto}
+    .stat{background:#1e293b;padding:8px 12px;border-radius:8px;text-align:center}
+    .stat .val{font-size:1.1rem;font-weight:700;color:#60a5fa;font-family:monospace}
+    .stat .lbl{font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.3px}
+
+    .demo-code{padding:16px 24px;background:#0a0f1a;border-top:1px solid #334155;font-family:monospace;font-size:.8rem;color:#94a3b8;overflow-x:auto;white-space:pre}
+    .demo-code .kw{color:#c084fc}.demo-code .fn{color:#60a5fa}.demo-code .cm{color:#475569}.demo-code .nr{color:#fb923c}.demo-code .st{color:#4ade80}
+
+    footer{text-align:center;padding:40px 20px;color:#64748b;border-top:1px solid #1e293b}
+    footer a{color:#94a3b8}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#kmeans">k-Means</a>
+    <a href="#knn">kNN</a>
+    <a href="#logistic">Logistic</a>
+    <a href="#dbscan">DBSCAN</a>
+    <a href="#dtree">Tree</a>
+    <a href="#pca">PCA</a>
+    <a href="#perceptron">Perceptron</a>
+    <a href="#seasonal">Seasonal</a>
+    <a href="https://github.com/AdamPerlinski/micro-ml">GitHub</a>
+  </nav>
+
+  <div id="status" class="status-bar loading">Loading WASM module...</div>
+
+  <section class="hero">
+    <h1>ML Playground</h1>
+    <p>8 algorithms. ~56KB. All running in your browser via WebAssembly.</p>
+  </section>
+
+  <div class="container">
+
+    <!-- ====== k-Means ====== -->
+    <div class="demo-card" id="kmeans">
+      <div class="demo-card-head">
+        <h2><span style="color:#60a5fa">01</span> k-Means Clustering</h2>
+        <span class="tag tag-cluster">Clustering</span>
+      </div>
+      <div class="demo-card-body">
+        <div class="demo-viz"><canvas id="km-chart"></canvas></div>
+        <div class="demo-controls">
+          <div class="ctrl-group">
+            <label>Clusters (k) <span id="km-k-val">3</span></label>
+            <input type="range" id="km-k" min="2" max="8" value="3" oninput="document.getElementById('km-k-val').textContent=this.value">
+          </div>
+          <div class="ctrl-group">
+            <label>Points <span id="km-n-val">150</span></label>
+            <input type="range" id="km-n" min="50" max="500" step="50" value="150" oninput="document.getElementById('km-n-val').textContent=this.value">
+          </div>
+          <button class="btn-gen" onclick="kmGenerate()">Generate Data</button>
+          <button class="btn-run" onclick="kmRun()">Run k-Means</button>
+          <div class="demo-stats">
+            <div class="stat"><div class="val" id="km-iter">-</div><div class="lbl">Iterations</div></div>
+            <div class="stat"><div class="val" id="km-inertia">-</div><div class="lbl">Inertia</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-code"><span class="kw">const</span> model = <span class="kw">await</span> <span class="fn">kmeans</span>(data, { <span class="nr">k: 3</span> });
+model.<span class="fn">getCentroids</span>();    <span class="cm">// [[x,y], ...]</span>
+model.<span class="fn">getAssignments</span>(); <span class="cm">// [0, 1, 2, 0, ...]</span></div>
+    </div>
+
+    <!-- ====== kNN ====== -->
+    <div class="demo-card" id="knn">
+      <div class="demo-card-head">
+        <h2><span style="color:#a78bfa">02</span> k-Nearest Neighbors</h2>
+        <span class="tag tag-classify">Classification</span>
+      </div>
+      <div class="demo-card-body">
+        <div class="demo-viz"><canvas id="knn-chart"></canvas></div>
+        <div class="demo-controls">
+          <div class="ctrl-group">
+            <label>k <span id="knn-k-val">5</span></label>
+            <input type="range" id="knn-k" min="1" max="15" value="5" oninput="document.getElementById('knn-k-val').textContent=this.value">
+          </div>
+          <button class="btn-gen" onclick="knnGenerate()">Generate Data</button>
+          <button class="btn-run" onclick="knnRun()">Classify Grid</button>
+          <div class="demo-stats">
+            <div class="stat"><div class="val" id="knn-samples">-</div><div class="lbl">Samples</div></div>
+            <div class="stat"><div class="val" id="knn-time">-</div><div class="lbl">Time (ms)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-code"><span class="kw">const</span> model = <span class="kw">await</span> <span class="fn">knnClassifier</span>(data, labels, { <span class="nr">k: 5</span> });
+model.<span class="fn">predict</span>([[<span class="nr">1.5</span>, <span class="nr">2.0</span>]]); <span class="cm">// [0] or [1]</span></div>
+    </div>
+
+    <!-- ====== Logistic Regression ====== -->
+    <div class="demo-card" id="logistic">
+      <div class="demo-card-head">
+        <h2><span style="color:#f472b6">03</span> Logistic Regression</h2>
+        <span class="tag tag-classify">Classification</span>
+      </div>
+      <div class="demo-card-body">
+        <div class="demo-viz"><canvas id="lr-chart"></canvas></div>
+        <div class="demo-controls">
+          <div class="ctrl-group">
+            <label>Learning Rate <span id="lr-lr-val">0.1</span></label>
+            <input type="range" id="lr-lr" min="0.01" max="1" step="0.01" value="0.1" oninput="document.getElementById('lr-lr-val').textContent=parseFloat(this.value).toFixed(2)">
+          </div>
+          <div class="ctrl-group">
+            <label>Iterations <span id="lr-iter-val">200</span></label>
+            <input type="range" id="lr-iter" min="50" max="1000" step="50" value="200" oninput="document.getElementById('lr-iter-val').textContent=this.value">
+          </div>
+          <button class="btn-gen" onclick="lrGenerate()">Generate Data</button>
+          <button class="btn-run" onclick="lrRun()">Train Model</button>
+          <div class="demo-stats">
+            <div class="stat"><div class="val" id="lr-loss">-</div><div class="lbl">Loss</div></div>
+            <div class="stat"><div class="val" id="lr-bias">-</div><div class="lbl">Bias</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-code"><span class="kw">const</span> model = <span class="kw">await</span> <span class="fn">logisticRegression</span>(data, labels, { <span class="nr">learningRate: 0.1</span> });
+model.<span class="fn">predictProba</span>([[<span class="nr">x</span>, <span class="nr">y</span>]]); <span class="cm">// [0.87]</span></div>
+    </div>
+
+    <!-- ====== DBSCAN ====== -->
+    <div class="demo-card" id="dbscan">
+      <div class="demo-card-head">
+        <h2><span style="color:#60a5fa">04</span> DBSCAN</h2>
+        <span class="tag tag-cluster">Clustering</span>
+      </div>
+      <div class="demo-card-body">
+        <div class="demo-viz"><canvas id="db-chart"></canvas></div>
+        <div class="demo-controls">
+          <div class="ctrl-group">
+            <label>Epsilon <span id="db-eps-val">0.80</span></label>
+            <input type="range" id="db-eps" min="0.1" max="3" step="0.1" value="0.8" oninput="document.getElementById('db-eps-val').textContent=parseFloat(this.value).toFixed(2)">
+          </div>
+          <div class="ctrl-group">
+            <label>Min Points <span id="db-mp-val">4</span></label>
+            <input type="range" id="db-mp" min="2" max="10" value="4" oninput="document.getElementById('db-mp-val').textContent=this.value">
+          </div>
+          <button class="btn-gen" onclick="dbGenerate()">Generate Data</button>
+          <button class="btn-run" onclick="dbRun()">Run DBSCAN</button>
+          <div class="demo-stats">
+            <div class="stat"><div class="val" id="db-clusters">-</div><div class="lbl">Clusters</div></div>
+            <div class="stat"><div class="val" id="db-noise">-</div><div class="lbl">Noise</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-code"><span class="kw">const</span> result = <span class="kw">await</span> <span class="fn">dbscan</span>(data, { <span class="nr">eps: 0.8</span>, <span class="nr">minPoints: 4</span> });
+result.nClusters; <span class="cm">// 3</span>   result.nNoise; <span class="cm">// 12</span></div>
+    </div>
+
+    <!-- ====== Decision Tree ====== -->
+    <div class="demo-card" id="dtree">
+      <div class="demo-card-head">
+        <h2><span style="color:#a78bfa">05</span> Decision Tree</h2>
+        <span class="tag tag-classify">Classification</span>
+      </div>
+      <div class="demo-card-body">
+        <div class="demo-viz"><canvas id="dt-chart"></canvas></div>
+        <div class="demo-controls">
+          <div class="ctrl-group">
+            <label>Max Depth <span id="dt-depth-val">4</span></label>
+            <input type="range" id="dt-depth" min="1" max="10" value="4" oninput="document.getElementById('dt-depth-val').textContent=this.value">
+          </div>
+          <button class="btn-gen" onclick="dtGenerate()">Generate Data</button>
+          <button class="btn-run" onclick="dtRun()">Train Tree</button>
+          <div class="demo-stats">
+            <div class="stat"><div class="val" id="dt-d">-</div><div class="lbl">Depth</div></div>
+            <div class="stat"><div class="val" id="dt-n">-</div><div class="lbl">Nodes</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-code"><span class="kw">const</span> tree = <span class="kw">await</span> <span class="fn">decisionTree</span>(data, labels, { <span class="nr">maxDepth: 4</span>, mode: <span class="st">'classify'</span> });
+tree.depth; <span class="cm">// 4</span>   tree.nNodes; <span class="cm">// 15</span></div>
+    </div>
+
+    <!-- ====== PCA ====== -->
+    <div class="demo-card" id="pca">
+      <div class="demo-card-head">
+        <h2><span style="color:#f472b6">06</span> PCA</h2>
+        <span class="tag tag-transform">Dimensionality Reduction</span>
+      </div>
+      <div class="demo-card-body">
+        <div class="demo-viz"><canvas id="pca-chart"></canvas></div>
+        <div class="demo-controls">
+          <div class="ctrl-group">
+            <label>Features <span id="pca-f-val">5</span></label>
+            <input type="range" id="pca-f" min="3" max="10" value="5" oninput="document.getElementById('pca-f-val').textContent=this.value">
+          </div>
+          <div class="ctrl-group">
+            <label>Points <span id="pca-n-val">100</span></label>
+            <input type="range" id="pca-n" min="50" max="300" step="25" value="100" oninput="document.getElementById('pca-n-val').textContent=this.value">
+          </div>
+          <button class="btn-gen" onclick="pcaGenerate()">Generate Data</button>
+          <button class="btn-run" onclick="pcaRun()">Run PCA</button>
+          <div class="demo-stats">
+            <div class="stat"><div class="val" id="pca-v1">-</div><div class="lbl">PC1 Var%</div></div>
+            <div class="stat"><div class="val" id="pca-v2">-</div><div class="lbl">PC2 Var%</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-code"><span class="kw">const</span> result = <span class="kw">await</span> <span class="fn">pca</span>(data, { <span class="nr">nComponents: 2</span> });
+result.<span class="fn">getExplainedVarianceRatio</span>(); <span class="cm">// [0.72, 0.18]</span></div>
+    </div>
+
+    <!-- ====== Perceptron ====== -->
+    <div class="demo-card" id="perceptron">
+      <div class="demo-card-head">
+        <h2><span style="color:#60a5fa">07</span> Perceptron</h2>
+        <span class="tag tag-classify">Classification</span>
+      </div>
+      <div class="demo-card-body">
+        <div class="demo-viz"><canvas id="pt-chart"></canvas></div>
+        <div class="demo-controls">
+          <div class="ctrl-group">
+            <label>Learning Rate <span id="pt-lr-val">0.10</span></label>
+            <input type="range" id="pt-lr" min="0.01" max="1" step="0.01" value="0.1" oninput="document.getElementById('pt-lr-val').textContent=parseFloat(this.value).toFixed(2)">
+          </div>
+          <div class="ctrl-group">
+            <label>Max Iterations <span id="pt-iter-val">100</span></label>
+            <input type="range" id="pt-iter" min="10" max="500" step="10" value="100" oninput="document.getElementById('pt-iter-val').textContent=this.value">
+          </div>
+          <button class="btn-gen" onclick="ptGenerate()">Generate Data</button>
+          <button class="btn-run" onclick="ptRun()">Train Perceptron</button>
+          <div class="demo-stats">
+            <div class="stat"><div class="val" id="pt-conv">-</div><div class="lbl">Converged</div></div>
+            <div class="stat"><div class="val" id="pt-its">-</div><div class="lbl">Iterations</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-code"><span class="kw">const</span> model = <span class="kw">await</span> <span class="fn">perceptron</span>(data, labels, { <span class="nr">learningRate: 0.1</span> });
+model.converged; <span class="cm">// true</span>   model.<span class="fn">getWeights</span>(); <span class="cm">// [w1, w2]</span></div>
+    </div>
+
+    <!-- ====== Seasonality ====== -->
+    <div class="demo-card" id="seasonal">
+      <div class="demo-card-head">
+        <h2><span style="color:#4ade80">08</span> Seasonal Decomposition</h2>
+        <span class="tag tag-timeseries">Time Series</span>
+      </div>
+      <div class="demo-card-body">
+        <div class="demo-viz"><canvas id="ss-chart"></canvas></div>
+        <div class="demo-controls">
+          <div class="ctrl-group">
+            <label>Period <span id="ss-p-val">12</span></label>
+            <input type="range" id="ss-p" min="3" max="24" value="12" oninput="document.getElementById('ss-p-val').textContent=this.value">
+          </div>
+          <div class="ctrl-group">
+            <label>Cycles <span id="ss-c-val">4</span></label>
+            <input type="range" id="ss-c" min="2" max="8" value="4" oninput="document.getElementById('ss-c-val').textContent=this.value">
+          </div>
+          <button class="btn-gen" onclick="ssGenerate()">Generate Data</button>
+          <button class="btn-run" onclick="ssRun()">Decompose</button>
+          <div class="demo-stats">
+            <div class="stat"><div class="val" id="ss-det-p">-</div><div class="lbl">Detected Period</div></div>
+            <div class="stat"><div class="val" id="ss-str">-</div><div class="lbl">Strength</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-code"><span class="kw">const</span> d = <span class="kw">await</span> <span class="fn">seasonalDecompose</span>(data, <span class="nr">12</span>);
+d.<span class="fn">getTrend</span>(); d.<span class="fn">getSeasonal</span>(); d.<span class="fn">getResidual</span>();</div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>
+      <a href="index.html">Home</a> &middot;
+      <a href="https://github.com/AdamPerlinski/micro-ml">GitHub</a> &middot;
+      <a href="https://www.npmjs.com/package/micro-ml">npm</a> &middot;
+      MIT License
+    </p>
+    <p style="margin-top:10px">Built with Rust + WebAssembly</p>
+  </footer>
+
+  <script type="module">
+    import * as ml from 'https://esm.sh/micro-ml';
+    window.ml = ml;
+
+    // ── Palette ──
+    const C = ['#3b82f6','#ef4444','#4ade80','#f59e0b','#a78bfa','#f472b6','#06b6d4','#fb923c'];
+    const CA = i => C[i % C.length];
+    const chartDark = { color: '#94a3b8', grid: { color: '#1e293b' } };
+
+    // ── Helpers ──
+    function randn() { let u=0,v=0; while(!u) u=Math.random(); while(!v) v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+    function blob(cx,cy,n,spread=.5){ return Array.from({length:n},()=>[cx+randn()*spread, cy+randn()*spread]); }
+    function scatterData(points, labels, colors) {
+      const map = {};
+      points.forEach((p,i) => {
+        const l = labels[i]; if (!map[l]) map[l]={data:[],backgroundColor:colors[l]||CA(l),pointRadius:4};
+        map[l].data.push({x:p[0],y:p[1]});
+      });
+      return Object.entries(map).map(([l,d])=>({label:'Class '+l,...d}));
+    }
+    function makeChart(id, datasets, opts={}) {
+      const el = document.getElementById(id);
+      if (el._chart) el._chart.destroy();
+      const c = new Chart(el, {
+        type: opts.type||'scatter',
+        data: { datasets },
+        options: {
+          responsive:true, maintainAspectRatio:false, animation:{duration:300},
+          plugins:{legend:{display:opts.legend!==false,labels:{color:'#94a3b8',boxWidth:12,padding:8,font:{size:11}}}},
+          scales: opts.scales || {
+            x:{...chartDark,title:{display:!!opts.xLabel,text:opts.xLabel||'',color:'#64748b'}},
+            y:{...chartDark,title:{display:!!opts.yLabel,text:opts.yLabel||'',color:'#64748b'}}
+          },
+          ...opts.extra
+        }
+      });
+      el._chart = c;
+      return c;
+    }
+
+    // ── State ──
+    const S = { km:{}, knn:{}, lr:{}, db:{}, dt:{}, pca:{}, pt:{}, ss:{} };
+
+    // ── Init ──
+    try {
+      const t0 = performance.now();
+      await ml.init();
+      const t = (performance.now()-t0).toFixed(1);
+      document.getElementById('status').textContent = `WASM loaded in ${t}ms`;
+      document.getElementById('status').className = 'status-bar ready';
+      // Auto-generate all
+      kmGenerate(); knnGenerate(); lrGenerate(); dbGenerate(); dtGenerate(); pcaGenerate(); ptGenerate(); ssGenerate();
+    } catch(e) {
+      document.getElementById('status').textContent = 'Error: '+e.message;
+      document.getElementById('status').style.color = '#f87171';
+    }
+
+    // ═══════════════════════════════
+    //  01  k-Means
+    // ═══════════════════════════════
+    window.kmGenerate = () => {
+      const n = +document.getElementById('km-n').value;
+      const k = +document.getElementById('km-k').value;
+      const pts = [];
+      for (let i=0;i<k;i++) {
+        const cx = (Math.random()-0.5)*8, cy = (Math.random()-0.5)*8;
+        pts.push(...blob(cx,cy,Math.ceil(n/k),1));
+      }
+      S.km.data = pts;
+      makeChart('km-chart', [{label:'Data',data:pts.map(p=>({x:p[0],y:p[1]})),backgroundColor:'#475569',pointRadius:3}]);
+      document.getElementById('km-iter').textContent = '-';
+      document.getElementById('km-inertia').textContent = '-';
+    };
+    window.kmRun = async () => {
+      if (!S.km.data) return;
+      const k = +document.getElementById('km-k').value;
+      const model = await ml.kmeans(S.km.data, { k });
+      const labels = model.getAssignments();
+      const centroids = model.getCentroids();
+      const ds = scatterData(S.km.data, labels, C);
+      ds.forEach(d=>{d.pointRadius=3;d.label=''});
+      ds.push({
+        label:'Centroids', data:centroids.map(c=>({x:c[0],y:c[1]})),
+        backgroundColor:'#f8fafc', pointRadius:8, pointStyle:'crossRot', borderColor:'#f8fafc', borderWidth:2
+      });
+      makeChart('km-chart', ds);
+      document.getElementById('km-iter').textContent = model.iterations;
+      document.getElementById('km-inertia').textContent = model.inertia.toFixed(1);
+    };
+
+    // ═══════════════════════════════
+    //  02  kNN
+    // ═══════════════════════════════
+    window.knnGenerate = () => {
+      const a = blob(1.5,1.5,40,0.8);
+      const b = blob(-1.5,-1.5,40,0.8);
+      S.knn.data = [...a,...b];
+      S.knn.labels = [...a.map(()=>0),...b.map(()=>1)];
+      const ds = scatterData(S.knn.data, S.knn.labels, ['#3b82f6','#ef4444']);
+      ds.forEach(d=>d.pointRadius=4);
+      makeChart('knn-chart', ds);
+      document.getElementById('knn-samples').textContent = S.knn.data.length;
+      document.getElementById('knn-time').textContent = '-';
+    };
+    window.knnRun = async () => {
+      if (!S.knn.data) return;
+      const k = +document.getElementById('knn-k').value;
+      const t0 = performance.now();
+      const model = await ml.knnClassifier(S.knn.data, S.knn.labels, { k });
+      // Build decision grid
+      const grid = []; const res = 25;
+      const xs = S.knn.data.map(p=>p[0]), ys = S.knn.data.map(p=>p[1]);
+      const xMin=Math.min(...xs)-1, xMax=Math.max(...xs)+1, yMin=Math.min(...ys)-1, yMax=Math.max(...ys)+1;
+      for (let i=0;i<res;i++) for(let j=0;j<res;j++) grid.push([xMin+(xMax-xMin)*i/res, yMin+(yMax-yMin)*j/res]);
+      const preds = model.predict(grid);
+      const elapsed = (performance.now()-t0).toFixed(1);
+
+      const bg0 = grid.filter((_,i)=>preds[i]===0).map(p=>({x:p[0],y:p[1]}));
+      const bg1 = grid.filter((_,i)=>preds[i]===1).map(p=>({x:p[0],y:p[1]}));
+      const ds = [
+        {label:'',data:bg0,backgroundColor:'#3b82f620',pointRadius:6,pointStyle:'rect'},
+        {label:'',data:bg1,backgroundColor:'#ef444420',pointRadius:6,pointStyle:'rect'},
+        ...scatterData(S.knn.data, S.knn.labels, ['#3b82f6','#ef4444'])
+      ];
+      makeChart('knn-chart', ds);
+      document.getElementById('knn-time').textContent = elapsed;
+    };
+
+    // ═══════════════════════════════
+    //  03  Logistic Regression
+    // ═══════════════════════════════
+    window.lrGenerate = () => {
+      const a = blob(1,1,50,0.8);
+      const b = blob(-1,-1,50,0.8);
+      S.lr.data = [...a,...b];
+      S.lr.labels = [...a.map(()=>1),...b.map(()=>0)];
+      const ds = scatterData(S.lr.data, S.lr.labels, ['#ef4444','#3b82f6']);
+      makeChart('lr-chart', ds);
+      document.getElementById('lr-loss').textContent = '-';
+      document.getElementById('lr-bias').textContent = '-';
+    };
+    window.lrRun = async () => {
+      if (!S.lr.data) return;
+      const lr = +document.getElementById('lr-lr').value;
+      const iters = +document.getElementById('lr-iter').value;
+      const model = await ml.logisticRegression(S.lr.data, S.lr.labels, { learningRate:lr, maxIterations:iters });
+      const w = model.getWeights();
+      // Decision boundary: w0*x + w1*y + bias = 0 => y = -(w0*x + bias)/w1
+      const xs = S.lr.data.map(p=>p[0]);
+      const xMin = Math.min(...xs)-1, xMax = Math.max(...xs)+1;
+      const lineData = [];
+      if (Math.abs(w[1]) > 1e-6) {
+        for (let x=xMin;x<=xMax;x+=0.1) lineData.push({x, y:-(w[0]*x+model.bias)/w[1]});
+      }
+      const ds = [
+        ...scatterData(S.lr.data, S.lr.labels, ['#ef4444','#3b82f6']),
+        {label:'Boundary',data:lineData,type:'line',borderColor:'#4ade80',borderWidth:2,pointRadius:0,fill:false}
+      ];
+      makeChart('lr-chart', ds);
+      document.getElementById('lr-loss').textContent = model.loss.toFixed(4);
+      document.getElementById('lr-bias').textContent = model.bias.toFixed(3);
+    };
+
+    // ═══════════════════════════════
+    //  04  DBSCAN
+    // ═══════════════════════════════
+    window.dbGenerate = () => {
+      // 3 clusters + noise
+      const pts = [...blob(0,3,30,0.4),...blob(-2,-1,30,0.4),...blob(2,-1,30,0.4)];
+      for(let i=0;i<15;i++) pts.push([(Math.random()-0.5)*8,(Math.random()-0.5)*8]);
+      S.db.data = pts;
+      makeChart('db-chart',[{label:'Data',data:pts.map(p=>({x:p[0],y:p[1]})),backgroundColor:'#475569',pointRadius:3}]);
+      document.getElementById('db-clusters').textContent = '-';
+      document.getElementById('db-noise').textContent = '-';
+    };
+    window.dbRun = async () => {
+      if (!S.db.data) return;
+      const eps = +document.getElementById('db-eps').value;
+      const mp = +document.getElementById('db-mp').value;
+      const result = await ml.dbscan(S.db.data, { eps, minPoints:mp });
+      const labels = result.getLabels();
+      const pts = S.db.data;
+      const ds = [];
+      const unique = [...new Set(labels)].sort((a,b)=>a-b);
+      unique.forEach(l => {
+        const subset = pts.filter((_,i)=>labels[i]===l);
+        ds.push({
+          label: l===-1?'Noise':'Cluster '+l,
+          data: subset.map(p=>({x:p[0],y:p[1]})),
+          backgroundColor: l===-1?'#64748b':CA(l),
+          pointRadius: l===-1?3:4,
+          pointStyle: l===-1?'cross':'circle'
+        });
+      });
+      makeChart('db-chart', ds);
+      document.getElementById('db-clusters').textContent = result.nClusters;
+      document.getElementById('db-noise').textContent = result.nNoise;
+    };
+
+    // ═══════════════════════════════
+    //  05  Decision Tree
+    // ═══════════════════════════════
+    window.dtGenerate = () => {
+      // XOR-like pattern
+      const pts = []; const lbl = [];
+      for (let i=0;i<120;i++) {
+        const x = (Math.random()-0.5)*4, y = (Math.random()-0.5)*4;
+        const c = ((x>0)!==(y>0)) ? 1 : 0;
+        pts.push([x+randn()*0.3, y+randn()*0.3]); lbl.push(c);
+      }
+      S.dt.data = pts; S.dt.labels = lbl;
+      makeChart('dt-chart', scatterData(pts,lbl,['#3b82f6','#ef4444']));
+      document.getElementById('dt-d').textContent = '-';
+      document.getElementById('dt-n').textContent = '-';
+    };
+    window.dtRun = async () => {
+      if (!S.dt.data) return;
+      const depth = +document.getElementById('dt-depth').value;
+      const model = await ml.decisionTree(S.dt.data, S.dt.labels, { maxDepth:depth, mode:'classify' });
+      // Grid
+      const grid = []; const res = 30;
+      const xs = S.dt.data.map(p=>p[0]), ys = S.dt.data.map(p=>p[1]);
+      const xMin=Math.min(...xs)-0.5,xMax=Math.max(...xs)+0.5,yMin=Math.min(...ys)-0.5,yMax=Math.max(...ys)+0.5;
+      for(let i=0;i<res;i++)for(let j=0;j<res;j++) grid.push([xMin+(xMax-xMin)*i/res,yMin+(yMax-yMin)*j/res]);
+      const preds = model.predict(grid);
+      const bg0 = grid.filter((_,i)=>preds[i]===0).map(p=>({x:p[0],y:p[1]}));
+      const bg1 = grid.filter((_,i)=>preds[i]===1).map(p=>({x:p[0],y:p[1]}));
+      const ds = [
+        {label:'',data:bg0,backgroundColor:'#3b82f615',pointRadius:5,pointStyle:'rect'},
+        {label:'',data:bg1,backgroundColor:'#ef444415',pointRadius:5,pointStyle:'rect'},
+        ...scatterData(S.dt.data,S.dt.labels,['#3b82f6','#ef4444'])
+      ];
+      makeChart('dt-chart', ds);
+      document.getElementById('dt-d').textContent = model.depth;
+      document.getElementById('dt-n').textContent = model.nNodes;
+    };
+
+    // ═══════════════════════════════
+    //  06  PCA
+    // ═══════════════════════════════
+    window.pcaGenerate = () => {
+      const nf = +document.getElementById('pca-f').value;
+      const n = +document.getElementById('pca-n').value;
+      // Generate high-D data with 2 main directions
+      const pts = [];
+      for (let i=0;i<n;i++) {
+        const a = randn()*3, b = randn();
+        const row = [];
+        for (let j=0;j<nf;j++) row.push(a*(j+1)*0.5 + b*randn()*0.3 + randn()*0.2);
+        pts.push(row);
+      }
+      S.pca.data = pts;
+      // Show first 2 dims as preview
+      makeChart('pca-chart', [{label:'Dims 1-2',data:pts.map(p=>({x:p[0],y:p[1]})),backgroundColor:'#475569',pointRadius:3}],{xLabel:'Feature 1',yLabel:'Feature 2'});
+      document.getElementById('pca-v1').textContent = '-';
+      document.getElementById('pca-v2').textContent = '-';
+    };
+    window.pcaRun = async () => {
+      if (!S.pca.data) return;
+      const result = await ml.pca(S.pca.data, { nComponents:2 });
+      const transformed = result.getTransformed();
+      const ratios = result.getExplainedVarianceRatio();
+      makeChart('pca-chart',[{
+        label:'PCA Projection',data:transformed.map(p=>({x:p[0],y:p[1]})),
+        backgroundColor:'#a78bfa',pointRadius:3
+      }],{xLabel:`PC1 (${(ratios[0]*100).toFixed(1)}%)`,yLabel:`PC2 (${(ratios[1]*100).toFixed(1)}%)`});
+      document.getElementById('pca-v1').textContent = (ratios[0]*100).toFixed(1)+'%';
+      document.getElementById('pca-v2').textContent = (ratios[1]*100).toFixed(1)+'%';
+    };
+
+    // ═══════════════════════════════
+    //  07  Perceptron
+    // ═══════════════════════════════
+    window.ptGenerate = () => {
+      const a = blob(1.5,1.5,40,0.6);
+      const b = blob(-1.5,-1.5,40,0.6);
+      S.pt.data = [...a,...b];
+      S.pt.labels = [...a.map(()=>1),...b.map(()=>0)];
+      makeChart('pt-chart', scatterData(S.pt.data,S.pt.labels,['#ef4444','#3b82f6']));
+      document.getElementById('pt-conv').textContent = '-';
+      document.getElementById('pt-its').textContent = '-';
+    };
+    window.ptRun = async () => {
+      if (!S.pt.data) return;
+      const lr = +document.getElementById('pt-lr').value;
+      const maxIter = +document.getElementById('pt-iter').value;
+      const model = await ml.perceptron(S.pt.data, S.pt.labels, { learningRate:lr, maxIterations:maxIter });
+      const w = model.getWeights();
+      const xs = S.pt.data.map(p=>p[0]);
+      const xMin=Math.min(...xs)-1, xMax=Math.max(...xs)+1;
+      const line = [];
+      if (Math.abs(w[1])>1e-6) {
+        for(let x=xMin;x<=xMax;x+=0.1) line.push({x,y:-(w[0]*x+model.bias)/w[1]});
+      }
+      const ds = [
+        ...scatterData(S.pt.data,S.pt.labels,['#ef4444','#3b82f6']),
+        {label:'Boundary',data:line,type:'line',borderColor:'#4ade80',borderWidth:2,pointRadius:0,fill:false}
+      ];
+      makeChart('pt-chart',ds);
+      document.getElementById('pt-conv').textContent = model.converged?'Yes':'No';
+      document.getElementById('pt-its').textContent = model.iterations;
+    };
+
+    // ═══════════════════════════════
+    //  08  Seasonality
+    // ═══════════════════════════════
+    window.ssGenerate = () => {
+      const period = +document.getElementById('ss-p').value;
+      const cycles = +document.getElementById('ss-c').value;
+      const n = period * cycles;
+      const data = [];
+      for (let i=0;i<n;i++) {
+        const trend = i * 0.3;
+        const seasonal = 8 * Math.sin(2*Math.PI*i/period);
+        data.push(trend + seasonal + randn()*1.5);
+      }
+      S.ss.data = data;
+      const labels = data.map((_,i)=>i);
+      makeChart('ss-chart',[{label:'Raw',data:data.map((v,i)=>({x:i,y:v})),type:'line',borderColor:'#60a5fa',borderWidth:1.5,pointRadius:0,fill:false}],{type:'scatter',xLabel:'Time',yLabel:'Value'});
+      document.getElementById('ss-det-p').textContent = '-';
+      document.getElementById('ss-str').textContent = '-';
+    };
+    window.ssRun = async () => {
+      if (!S.ss.data) return;
+      const period = +document.getElementById('ss-p').value;
+      const decomp = await ml.seasonalDecompose(S.ss.data, period);
+      const info = await ml.detectSeasonality(S.ss.data);
+      const trend = decomp.getTrend();
+      const seasonal = decomp.getSeasonal();
+      const residual = decomp.getResidual();
+      const ds = [
+        {label:'Raw',data:S.ss.data.map((v,i)=>({x:i,y:v})),type:'line',borderColor:'#60a5fa',borderWidth:1,pointRadius:0,fill:false},
+        {label:'Trend',data:trend.map((v,i)=>({x:i,y:v})),type:'line',borderColor:'#4ade80',borderWidth:2,pointRadius:0,fill:false},
+        {label:'Seasonal',data:seasonal.map((v,i)=>({x:i,y:v})),type:'line',borderColor:'#f59e0b',borderWidth:1,pointRadius:0,fill:false,borderDash:[4,4]},
+      ];
+      makeChart('ss-chart',ds,{type:'scatter',xLabel:'Time',yLabel:'Value'});
+      document.getElementById('ss-det-p').textContent = info.period;
+      document.getElementById('ss-str').textContent = info.strength.toFixed(2);
+    };
+  </script>
+</body>
+</html>

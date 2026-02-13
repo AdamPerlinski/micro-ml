@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>micro-ml - Tiny WASM-Powered ML for the Browser</title>
-  <meta name="description" content="A tiny (40KB) blazing-fast WASM library for predictions, trend analysis, and regression in the browser.">
+  <meta name="description" content="A tiny (~56KB) blazing-fast WASM machine learning library for the browser. k-Means, kNN, Decision Trees, PCA, Regression, and more.">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -489,6 +489,7 @@
     <a href="#usecases">Use Cases</a>
     <a href="#api">API</a>
     <a href="#demo">Try It</a>
+    <a href="ml.html">ML Demos</a>
     <a href="https://github.com/AdamPerlinski/micro-ml">GitHub</a>
   </nav>
 
@@ -500,14 +501,14 @@
     <p class="tagline">You don't need TensorFlow.js for a trendline.</p>
 
     <p style="color: #94a3b8; max-width: 600px; margin: 0 auto 30px;">
-      Most apps just need simple predictions: forecast sales, smooth sensor data, add a trendline.
-      ~40KB gzipped. Handles 100 million points in ~1 second.
+      8 ML algorithms + regression + forecasting. All in ~56KB gzipped.
+      Handles 100 million points in ~1 second.
     </p>
 
     <div class="size-badge">
       <span class="big">TensorFlow.js 500KB</span>
       <span class="vs">vs</span>
-      <span class="small">micro-ml ~40KB</span>
+      <span class="small">micro-ml ~56KB</span>
     </div>
 
     <div class="hero-buttons">
@@ -535,12 +536,12 @@
       <div class="feature">
         <div class="feature-icon">📦</div>
         <h3>Small</h3>
-        <p>~40KB gzipped. No dependencies. Won't bloat your app.</p>
+        <p>~56KB gzipped. No dependencies. Won't bloat your app.</p>
       </div>
       <div class="feature">
         <div class="feature-icon">🎯</div>
         <h3>Focused</h3>
-        <p>Regression, smoothing, forecasting. Does one thing well.</p>
+        <p>k-Means, kNN, Decision Trees, PCA, Logistic Regression, and more.</p>
       </div>
       <div class="feature">
         <div class="feature-icon">⚡</div>
@@ -583,8 +584,8 @@
       </div>
       <div class="comparison-item highlight">
         <h4>micro-ml</h4>
-        <div class="size">40KB</div>
-        <div class="note">Regression & forecasting</div>
+        <div class="size">56KB</div>
+        <div class="note">8 ML algorithms + regression</div>
       </div>
     </div>
 

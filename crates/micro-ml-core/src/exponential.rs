@@ -1,9 +1,8 @@
 use wasm_bindgen::prelude::*;
-use serde::{Deserialize, Serialize};
 use crate::error::MlError;
 
 /// Result of an exponential regression fit: y = a * e^(b*x)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 #[wasm_bindgen]
 pub struct ExponentialModel {
     a: f64,      // Initial value / amplitude
@@ -150,7 +149,7 @@ pub fn exponential_regression_simple(y: &[f64]) -> Result<ExponentialModel, JsEr
 
 
 /// Result of a logarithmic regression fit: y = a + b * ln(x)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 #[wasm_bindgen]
 pub struct LogarithmicModel {
     a: f64,      // Intercept
@@ -276,7 +275,7 @@ pub fn logarithmic_regression(x: &[f64], y: &[f64]) -> Result<LogarithmicModel, 
 
 
 /// Result of a power regression fit: y = a * x^b
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 #[wasm_bindgen]
 pub struct PowerModel {
     a: f64,      // Coefficient
