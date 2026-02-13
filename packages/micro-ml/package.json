@@ -1,7 +1,7 @@
 {
   "name": "micro-ml",
   "version": "1.0.0",
-  "description": "A tiny, blazing-fast WASM-powered machine learning library",
+  "description": "8 ML algorithms + statistics in ~56KB gzipped. Rust/WASM, zero dependencies, browser + Node.",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
