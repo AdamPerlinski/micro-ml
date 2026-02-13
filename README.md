@@ -18,7 +18,7 @@
 
 Most apps just need simple predictions: forecast next month's sales, add a trendline to a chart, smooth noisy sensor data. You don't need a 500KB neural network library for that.
 
-micro-ml is **~40KB gzipped** of focused functionality: regression, smoothing, and forecasting. Handles 100 million data points in ~1 second.
+micro-ml is **~56KB gzipped** — 8 ML algorithms + regression + smoothing + forecasting. All in WASM. Sub-millisecond on typical datasets.
 
 ```
 npm install micro-ml
@@ -73,6 +73,50 @@ console.log(expModel.doublingTime()); // "Population doubles every 3.2 days"
 const polyModel = await polynomialRegression(x, y, { degree: 2 });
 ```
 
+### Classify Data
+Got labelled data? Train a classifier.
+
+```js
+import { knnClassifier, logisticRegression } from 'micro-ml';
+
+// kNN — simple, no training
+const knn = await knnClassifier(trainingData, labels, { k: 5 });
+knn.predict([[1.5, 2.0]]); // [0] or [1]
+
+// Logistic Regression — fast, probabilistic
+const lr = await logisticRegression(data, labels, { maxIterations: 200 });
+lr.predictProba([[1.5, 2.0]]); // [0.87]
+```
+
+### Cluster Data
+Find natural groups without labels.
+
+```js
+import { kmeans, dbscan } from 'micro-ml';
+
+// k-Means — you know how many clusters
+const km = await kmeans(points, { k: 3 });
+km.getCentroids();    // [[x,y], [x,y], [x,y]]
+km.getAssignments();  // [0, 1, 2, 0, 1, ...]
+
+// DBSCAN — discovers clusters + noise automatically
+const db = await dbscan(points, { eps: 0.5, minPoints: 4 });
+db.nClusters; // 3
+db.nNoise;    // 12
+```
+
+### Reduce Dimensions
+Visualise high-dimensional data in 2D.
+
+```js
+import { pca } from 'micro-ml';
+
+// 50-dimensional data → 2 components
+const result = await pca(data, { nComponents: 2 });
+result.getExplainedVarianceRatio(); // [0.85, 0.10] (95% variance kept)
+result.getTransformed();            // [[x,y], [x,y], ...]
+```
+
 ---
 
 ## When to Use Which Function?
@@ -86,6 +130,13 @@ const polyModel = await polynomialRegression(x, y, { degree: 2 });
 | Noisy/jumpy data | `ema` or `sma` | Sensor readings, stock prices |
 | Need future predictions | `trendForecast` | Sales forecast, weight loss goal |
 | Find peaks/valleys | `findPeaks` / `findTroughs` | Detect anomalies, buy/sell signals |
+| Group similar items | `kmeans` | Customer segments, image colours |
+| Classify new items | `knnClassifier` | Spam detection, image recognition |
+| Binary yes/no | `logisticRegression` | Churn prediction, fraud detection |
+| Find clusters + outliers | `dbscan` | Anomaly detection, geo clustering |
+| Decision rules | `decisionTree` | Loan approval, feature importance |
+| Reduce dimensions | `pca` | Visualisation, feature extraction |
+| Seasonal patterns | `detectSeasonality` | Monthly sales cycles, weekly patterns |
 
 ---
 
@@ -279,6 +330,37 @@ const smooth = await ema([10,15,12,18,14,20], 3);
 | `rateOfChange(data, periods)` | % change from n ago | Growth rate |
 | `momentum(data, periods)` | Difference from n ago | Trend strength |
 
+### Classification (Label Data)
+
+| Function | What It Does | When to Use |
+|----------|--------------|-------------|
+| `knnClassifier(data, labels, {k})` | k-Nearest Neighbours | Simple classification |
+| `logisticRegression(data, labels, opts)` | Logistic regression | Binary classification |
+| `naiveBayes(data, labels)` | Gaussian Naive Bayes | Text/feature classification |
+| `decisionTree(data, labels, {maxDepth})` | CART decision tree | Interpretable rules |
+| `perceptron(data, labels, opts)` | Single-layer perceptron | Linear separability |
+
+### Clustering (Find Groups)
+
+| Function | What It Does | When to Use |
+|----------|--------------|-------------|
+| `kmeans(data, {k})` | k-Means clustering | Known number of groups |
+| `dbscan(data, {eps, minPoints})` | Density-based clustering | Unknown clusters + noise |
+
+### Dimensionality Reduction
+
+| Function | What It Does | When to Use |
+|----------|--------------|-------------|
+| `pca(data, {nComponents})` | Principal Component Analysis | Reduce dimensions, visualise |
+
+### Seasonality
+
+| Function | What It Does | When to Use |
+|----------|--------------|-------------|
+| `seasonalDecompose(data, period)` | Decompose trend + seasonal + residual | Understand patterns |
+| `autocorrelation(data, maxLag)` | Autocorrelation function | Find repeating patterns |
+| `detectSeasonality(data)` | Auto-detect period + strength | Unknown periodicity |
+
 ---
 
 ## Model Properties
@@ -309,16 +391,20 @@ model.doublingTime() // Time to double
 
 ## Performance
 
-Benchmarked on real hardware (median of 5 runs):
+Benchmarked in Node.js (median of 3 runs):
 
-| Data Size | Linear Regression | Moving Average | Polynomial |
-|-----------|------------------|----------------|------------|
-| 1,000 | < 1ms | < 1ms | < 1ms |
-| 10,000 | < 1ms | < 1ms | < 1ms |
-| 100,000 | 1ms | 3-4ms | 5ms |
-| 1,000,000 | 6-12ms | 30-35ms | 53ms |
-| 10,000,000 | 50-100ms | ~280ms | ~530ms |
-| 100,000,000 | ~500ms-1s | ~2.9s | - |
+| Algorithm | Data Size | Time |
+|-----------|-----------|------|
+| Linear Regression | 100,000 pts | 0.9ms |
+| k-Means | 10,000 pts, k=5 | 2ms |
+| kNN | 5,000 train, predict 20 | 3.4ms |
+| Logistic Regression | 5,000 pts | 11ms |
+| DBSCAN | 2,000 pts | 12ms |
+| Naive Bayes | 10,000 pts | 0.2ms |
+| PCA | 5,000 × 50 → 2 | 13ms |
+| Perceptron | 10,000 pts | 0.1ms |
+| Seasonal Decompose | 1,000 pts | 0.02ms |
+| SMA/EMA/WMA | 100,000 pts | 3ms |
 
 For very large datasets, use Web Workers:
 
@@ -336,7 +422,7 @@ ml.terminate();
 
 | Library | Size (gzip) | Speed |
 |---------|-------------|-------|
-| **micro-ml** | 40KB | Fastest (WASM) |
+| **micro-ml** | ~56KB | Fastest (WASM) |
 | TensorFlow.js | 500KB+ | Slow |
 | ml.js | 150KB | Medium |
 | simple-statistics | 30KB | Pure JS, slower |

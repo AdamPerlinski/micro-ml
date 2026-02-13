@@ -918,6 +918,94 @@ model.<span class="func">doublingTime</span>();  <span class="comment">// 1.4 mo
         </tr>
       </table>
     </div>
+
+    <div class="api-category">
+      <h3>🤖 Classification</h3>
+      <table class="api-table">
+        <tr>
+          <th>Function</th>
+          <th>Description</th>
+          <th>Use When</th>
+        </tr>
+        <tr>
+          <td><code>knnClassifier(data, labels, {k})</code></td>
+          <td class="desc">k-Nearest Neighbours</td>
+          <td class="desc">Simple classification</td>
+        </tr>
+        <tr>
+          <td><code>logisticRegression(data, labels, opts)</code></td>
+          <td class="desc">Logistic regression</td>
+          <td class="desc">Binary classification</td>
+        </tr>
+        <tr>
+          <td><code>naiveBayes(data, labels)</code></td>
+          <td class="desc">Gaussian Naive Bayes</td>
+          <td class="desc">Multi-class classification</td>
+        </tr>
+        <tr>
+          <td><code>decisionTree(data, labels, {maxDepth})</code></td>
+          <td class="desc">CART decision tree</td>
+          <td class="desc">Interpretable rules</td>
+        </tr>
+        <tr>
+          <td><code>perceptron(data, labels, opts)</code></td>
+          <td class="desc">Single-layer perceptron</td>
+          <td class="desc">Linear separability</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="api-category">
+      <h3>🔵 Clustering</h3>
+      <table class="api-table">
+        <tr>
+          <th>Function</th>
+          <th>Description</th>
+          <th>Use When</th>
+        </tr>
+        <tr>
+          <td><code>kmeans(data, {k})</code></td>
+          <td class="desc">k-Means (Lloyd's + k-means++ init)</td>
+          <td class="desc">Known number of groups</td>
+        </tr>
+        <tr>
+          <td><code>dbscan(data, {eps, minPoints})</code></td>
+          <td class="desc">Density-based clustering</td>
+          <td class="desc">Unknown clusters + noise</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="api-category">
+      <h3>📐 Dimensionality Reduction &amp; Seasonality</h3>
+      <table class="api-table">
+        <tr>
+          <th>Function</th>
+          <th>Description</th>
+          <th>Use When</th>
+        </tr>
+        <tr>
+          <td><code>pca(data, {nComponents})</code></td>
+          <td class="desc">Principal Component Analysis</td>
+          <td class="desc">Reduce dimensions, visualise</td>
+        </tr>
+        <tr>
+          <td><code>seasonalDecompose(data, period)</code></td>
+          <td class="desc">Trend + seasonal + residual</td>
+          <td class="desc">Understand time series</td>
+        </tr>
+        <tr>
+          <td><code>autocorrelation(data, maxLag)</code></td>
+          <td class="desc">Autocorrelation function</td>
+          <td class="desc">Find repeating patterns</td>
+        </tr>
+        <tr>
+          <td><code>detectSeasonality(data)</code></td>
+          <td class="desc">Auto-detect period + strength</td>
+          <td class="desc">Unknown periodicity</td>
+        </tr>
+      </table>
+    </div>
   </div>
 
   <!-- Live Demo -->
