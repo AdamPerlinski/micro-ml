@@ -29,6 +29,8 @@ import type {
   PcaOptions,
   PerceptronModel,
   PerceptronOptions,
+  SvmModel,
+  SvmOptions,
   SeasonalDecomposition,
   SeasonalityInfo,
 } from './types.js';
@@ -947,6 +949,55 @@ export async function perceptron(
     predict(d: number[][]) {
       const { flat: f } = flattenMatrix(d);
       return Array.from(model.predict(f));
+    },
+    toString() { return model.toString(); },
+  };
+}
+
+// ============================================================================
+// Support Vector Machine
+// ============================================================================
+
+/**
+ * Train a Support Vector Machine (SVM) classifier for binary classification
+ * 
+ * @param data - Training data as array of samples (each sample is array of features)
+ * @param labels - Binary class labels (0 or 1)
+ * @param options - Training options (learningRate, lambda, epochs)
+ * @returns Trained SVM model ready for prediction
+ * 
+ * @example
+ * ```ts
+ * const data = [[0, 0], [1, 1], [2, 2], [3, 3]];
+ * const labels = [0, 0, 1, 1];
+ * const model = await svm(data, labels, { epochs: 100, learningRate: 0.01 });
+ * const predictions = model.predict([[1.5, 1.5]]); // [1]
+ * const decisions = model.decisionFunction([[1.5, 1.5]]); // [positive distance value]
+ * ```
+ */
+export async function svm(
+  data: number[][],
+  labels: number[],
+  options: SvmOptions = {}
+): Promise<SvmModel> {
+  const wasm = await ensureInit();
+  const { flat, nFeatures } = flattenMatrix(data);
+  const lr = options.learningRate ?? 0.001;
+  const lambda = options.lambda ?? 0.01;
+  const epochs = options.epochs ?? 100;
+  const model = wasm.SvmModel.train(flat, nFeatures, new Float64Array(labels), lr, lambda, epochs);
+  return {
+    get bias() { return model.bias; },
+    get nFeatures() { return model.nFeatures; },
+    get nSamples() { return model.nSamples; },
+    getWeights() { return Array.from(model.getWeights()); },
+    predict(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      return Array.from(model.predict(f));
+    },
+    decisionFunction(d: number[][]) {
+      const { flat: f } = flattenMatrix(d);
+      return Array.from(model.decisionFunction(f));
     },
     toString() { return model.toString(); },
   };

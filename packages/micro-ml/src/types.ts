@@ -299,6 +299,22 @@ export interface PerceptronOptions {
   maxIterations?: number;
 }
 
+export interface SvmModel {
+  readonly bias: number;
+  readonly nFeatures: number;
+  readonly nSamples: number;
+  getWeights(): number[];
+  predict(data: number[][]): number[];
+  decisionFunction(data: number[][]): number[];
+  toString(): string;
+}
+
+export interface SvmOptions {
+  learningRate?: number;
+  lambda?: number;
+  epochs?: number;
+}
+
 export interface SeasonalDecomposition {
   readonly period: number;
   getTrend(): number[];

@@ -37,6 +37,7 @@ import {
   decisionTree,
   pca,
   perceptron,
+  svm,
   seasonalDecompose,
   autocorrelation,
   detectSeasonality,
@@ -906,6 +907,58 @@ describe('perceptron', () => {
     const labels = [0, 1];
     const model = await perceptron(data, labels);
     expect(model.getWeights()).toHaveLength(2);
+  });
+});
+
+// ============================================================================
+// Support Vector Machine
+// ============================================================================
+
+describe('svm', () => {
+  it('trains on linearly separable data', async () => {
+    const data = [
+      [0, 0], [1, 1], [2, 2],
+      [10, 10], [11, 11], [12, 12],
+    ];
+    const labels = [0, 0, 0, 1, 1, 1];
+    const model = await svm(data, labels, { epochs: 100, learningRate: 0.01, lambda: 0.01 });
+    const preds = model.predict(data);
+    expect(preds).toHaveLength(6);
+    expect(preds).toEqual([0, 0, 0, 1, 1, 1]);
+  });
+
+  it('returns weights and bias', async () => {
+    const data = [[0, 0], [1, 1], [10, 10], [11, 11]];
+    const labels = [0, 0, 1, 1];
+    const model = await svm(data, labels, { epochs: 50 });
+    expect(model.getWeights()).toHaveLength(2);
+    expect(typeof model.bias).toBe('number');
+    expect(model.nFeatures).toBe(2);
+  });
+
+  it('computes decision function values', async () => {
+    const data = [
+      [0, 0], [1, 1],
+      [10, 10], [11, 11],
+    ];
+    const labels = [0, 0, 1, 1];
+    const model = await svm(data, labels, { epochs: 100, learningRate: 0.01 });
+    const decisions = model.decisionFunction(data);
+    expect(decisions).toHaveLength(4);
+    // Points from opposite classes should have opposite sign decisions
+    expect(decisions[0] * decisions[2]).toBeLessThan(0);
+  });
+
+  it('predicts single samples correctly', async () => {
+    const data = [
+      [0, 0], [1, 0], [0, 1],
+      [10, 10], [11, 10], [10, 11],
+    ];
+    const labels = [0, 0, 0, 1, 1, 1];
+    const model = await svm(data, labels, { epochs: 150, learningRate: 0.01 });
+    const testSample = [[0.5, 0.5]];
+    const pred = model.predict(testSample);
+    expect(pred[0]).toBe(0);
   });
 });
 
