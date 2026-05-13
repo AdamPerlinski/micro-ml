@@ -12,6 +12,7 @@ mod naive_bayes;
 mod decision_tree;
 mod pca;
 mod perceptron;
+mod svm;
 
 use wasm_bindgen::prelude::*;
 pub use error::MlError;
@@ -31,4 +32,5 @@ pub use dbscan::*;
 pub use naive_bayes::*;
 pub use decision_tree::*;
 pub use pca::*;
+pub use svm::*;
 pub use perceptron::*;
